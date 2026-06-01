@@ -1,37 +1,29 @@
-import { SS_LESSON_URL } from '../data/readingPlan';
+import { SS_LESSON_URL } from '../data/readingPlan'
 
 export default function WeekView({ weekData, currentWeek, myProgress, onWeekChange, maxWeek, onReadingCheck, celebrate }) {
-  const { days, ssLesson, weekNum } = weekData;
-  const ssData = myProgress.data.ssLessons[`week${weekNum}`] || {};
+  const { days, ssLesson, weekNum } = weekData
+
+  const ssData = myProgress.data.ssProgress[`w${weekNum}`] || {}
 
   const weekReadings = days.map(day => ({
     ...day,
-    done: myProgress.data.readings[`week${weekNum}_day${day.dayIndex}`]?.done || false,
-    verse: myProgress.data.verses[`week${weekNum}_day${day.dayIndex}`] || '',
-  }));
+    done: myProgress.data.readings[`w${weekNum}_d${day.dayIndex}`]?.done || false,
+    verse: myProgress.data.verses[`w${weekNum}_d${day.dayIndex}`] || '',
+  }))
 
-  const doneCount = weekReadings.filter(d => d.done).length;
-  const progress = Math.round((doneCount / days.length) * 100);
-
-  const weeklyVerse = myProgress.data.weeklyVerse[`week${weekNum}`] || '';
+  const doneCount = weekReadings.filter(d => d.done).length
+  const progress = Math.round((doneCount / days.length) * 100)
+  const weeklyVerse = myProgress.data.weeklyVerses[`w${weekNum}`] || ''
 
   return (
     <div className="week-view">
       <div className="week-nav">
-        <button
-          className="week-nav-btn"
-          disabled={currentWeek <= 1}
-          onClick={() => onWeekChange(currentWeek - 1)}
-        >←</button>
+        <button className="week-nav-btn" disabled={currentWeek <= 1} onClick={() => onWeekChange(currentWeek - 1)}>←</button>
         <div className="week-title">
           <span>Week {weekNum}</span>
           <span className="ss-badge">SS Lesson {ssLesson}</span>
         </div>
-        <button
-          className="week-nav-btn"
-          disabled={currentWeek >= maxWeek}
-          onClick={() => onWeekChange(currentWeek + 1)}
-        >→</button>
+        <button className="week-nav-btn" disabled={currentWeek >= maxWeek} onClick={() => onWeekChange(currentWeek + 1)}>→</button>
       </div>
 
       <div className="week-progress-bar">
@@ -65,11 +57,11 @@ export default function WeekView({ weekData, currentWeek, myProgress, onWeekChan
           <div className="week-day-header">
             <div className="week-day-name">Saturday</div>
             <div className="sat-checks">
-              <span className={`mini-badge ${ssData.read ? 'done' : ''}`}>
-                {ssData.read ? '✓' : '○'} lesson read
+              <span className={`mini-badge ${ssData.lesson_read ? 'done' : ''}`}>
+                {ssData.lesson_read ? '✓' : '○'} lesson read
               </span>
-              <span className={`mini-badge ${ssData.reviewed ? 'done' : ''}`}>
-                {ssData.reviewed ? '✓' : '○'} reviewed
+              <span className={`mini-badge ${ssData.lesson_reviewed ? 'done' : ''}`}>
+                {ssData.lesson_reviewed ? '✓' : '○'} reviewed
               </span>
             </div>
           </div>
@@ -89,5 +81,5 @@ export default function WeekView({ weekData, currentWeek, myProgress, onWeekChan
         </a>
       </div>
     </div>
-  );
+  )
 }

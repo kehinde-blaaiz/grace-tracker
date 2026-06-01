@@ -16,7 +16,8 @@ export default function FriendView({ partner, partnerProgress, currentWeek }) {
 
   if (partnerProgress.loading) return <div className="friend-view"><p className="muted">Loading partner data…</p></div>
 
-  const streak = partnerProgress.data.streak.current_streak
+  const lastActiveDate = partnerProgress.data.streak.last_active_date
+  const streak = lastActiveDate ? partnerProgress.data.streak.current_streak : 0
   const streakTitle = getStreakTitle(streak)
   const weekData = READING_PLAN[currentWeek - 1]
   const todayKey = new Date().toISOString().split('T')[0]

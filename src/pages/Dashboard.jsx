@@ -80,6 +80,7 @@ export default function Dashboard() {
         </div>
         <div className="dash-header-right">
           <StreakBadge streak={myProgress.data.streak.current_streak} title={streakTitle} lastActiveDate={myProgress.data.streak.last_active_date} />
+          <button className="logout-btn" onClick={() => { myProgress.refetch(); partnerProgress.refetch() }} title="Refresh">↺</button>
           <button className="logout-btn" onClick={signOut} title="Sign out">⇄</button>
         </div>
       </header>

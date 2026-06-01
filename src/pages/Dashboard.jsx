@@ -143,11 +143,23 @@ export default function Dashboard() {
 function TodayView({ todayReading, isSaturday, isSunday, weekData, myProgress, todayKey, prayerSlots, onReadingCheck, celebrate, profile }) {
   const [verseNote, setVerseNote] = useState('')
   const [editingVerse, setEditingVerse] = useState(false)
+  const [celebratedComplete, setCelebratedComplete] = useState(false)
 
   const readingKey = todayReading ? `w${weekData.weekNum}_d${todayReading.dayIndex}` : null
   const isDone = readingKey ? myProgress.data.readings[readingKey]?.done : false
   const savedVerse = readingKey ? myProgress.data.verses[readingKey] : ''
   const prayerData = myProgress.data.prayers[todayKey] || {}
+
+  const prayerAllDone = prayerSlots.length > 0 && prayerSlots.every(s => prayerData[s.key])
+  const readingDone = isDone || !todayReading
+  const isFullyComplete = readingDone && prayerAllDone
+
+  useEffect(() => {
+    if (isFullyComplete && !celebratedComplete) {
+      setCelebratedComplete(true)
+      celebrate('🙌 Day complete! Well done!')
+    }
+  }, [isFullyComplete])
 
   useEffect(() => { if (savedVerse) setVerseNote(savedVerse) }, [savedVerse])
 
@@ -195,6 +207,15 @@ function TodayView({ todayReading, isSaturday, isSunday, weekData, myProgress, t
 
   return (
     <div className="today-view">
+      {isFullyComplete && (
+        <div className="day-complete-banner">
+          <span className="day-complete-icon">✦</span>
+          <div>
+            <div className="day-complete-title">Day complete!</div>
+            <div className="day-complete-sub">Reading and prayer done. God is pleased.</div>
+          </div>
+        </div>
+      )}
       {todayReading ? (
         <>
           <div className="today-section-label">

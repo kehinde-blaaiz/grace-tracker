@@ -79,7 +79,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="dash-header-right">
-          <StreakBadge streak={myProgress.data.streak.current_streak} title={streakTitle} />
+          <StreakBadge streak={myProgress.data.streak.current_streak} title={streakTitle} lastActiveDate={myProgress.data.streak.last_active_date} />
           <button className="logout-btn" onClick={signOut} title="Sign out">⇄</button>
         </div>
       </header>

@@ -20,12 +20,17 @@ export default function Dashboard() {
   const [celebrateMsg, setCelebrateMsg] = useState('')
 
   useEffect(() => {
-    const startDate = localStorage.getItem('grace_start_date')
-    if (!startDate) {
-      localStorage.setItem('grace_start_date', new Date().toISOString().split('T')[0])
-    } else {
-      const diff = Math.floor((new Date() - new Date(startDate)) / 86400000)
-      setCurrentWeek(Math.min(Math.floor(diff / 7) + 1, READING_PLAN.length))
+    try {
+      let startDate = localStorage.getItem('grace_start_date')
+      if (!startDate) {
+        startDate = new Date().toISOString().split('T')[0]
+        localStorage.setItem('grace_start_date', startDate)
+      }
+      const diff = Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000)
+      const week = Math.max(1, Math.min(Math.floor(diff / 7) + 1, READING_PLAN.length))
+      setCurrentWeek(week)
+    } catch {
+      setCurrentWeek(1)
     }
   }, [])
 
@@ -108,7 +113,7 @@ export default function Dashboard() {
             profile={profile}
           />
         )}
-        {activeTab === 'week' && weekData && (
+        {activeTab === 'week' && (weekData ? (
           <WeekView
             weekData={weekData}
             currentWeek={currentWeek}
@@ -118,7 +123,7 @@ export default function Dashboard() {
             onReadingCheck={handleReadingCheck}
             celebrate={celebrate}
           />
-        )}
+        ) : <div className="no-reading-card"><p>Loading week data…</p></div>)}
         {activeTab === 'friend' && (
           <FriendView
             partner={partner}

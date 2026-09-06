@@ -710,6 +710,29 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
         <NotificationSettings profile={profile} updateProfile={updateProfile} />
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', overflow: 'hidden' }}>
+          <div style={{ padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className="ti ti-heart-handshake" style={{ fontSize: '15px', color: '#1a3a0a' }} aria-hidden="true" />
+              </div>
+              <span style={{ fontSize: '14px', color: '#1a1a12', fontWeight: '500' }}>Prayer schedule</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { key: 'prayer_morning',   label: 'Morning',   icon: 'ti-sunrise', color: '#BA7517', bg: '#FFF8ED' },
+                { key: 'prayer_afternoon', label: 'Afternoon', icon: 'ti-sun',     color: '#185FA5', bg: '#E6F1FB' },
+                { key: 'prayer_night',     label: 'Evening',   icon: 'ti-moon',    color: '#534AB7', bg: '#F0EEF8' },
+              ].map(slot => {
+                const isOn = profile?.[slot.key] ?? (slot.key === 'prayer_morning' || slot.key === 'prayer_night')
+                return (
+                  <button key={slot.key} onClick={() => updateProfile({ [slot.key]: !isOn })} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '10px 6px', border: `1.5px solid ${isOn ? '#1a3a0a' : '#e8e6e2'}`, borderRadius: '12px', background: isOn ? '#EAF3DE' : 'transparent', cursor: 'pointer' }}>
+                    <i className={`ti ${slot.icon}`} style={{ fontSize: '18px', color: isOn ? '#1a3a0a' : '#bbb' }} aria-hidden="true" />
+                    <span style={{ fontSize: '11px', color: isOn ? '#1a3a0a' : '#888', fontWeight: isOn ? '600' : '400' }}>{slot.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>
             <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className="ti ti-coin" style={{ fontSize: '15px', color: '#BA7517' }} aria-hidden="true" />

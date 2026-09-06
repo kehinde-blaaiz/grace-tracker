@@ -55,7 +55,8 @@ export default function Dashboard() {
   const prayerData = myProgress.data.prayers[todayKey] || {}
   const readingDone = todayReading ? !!myProgress.data.readings[`w${currentWeek}_d${todayDayIndex}`]?.done : false
   const prayerAllDone = prayerSlots.length > 0 && prayerSlots.every(s => prayerData[s.key])
-  const dayComplete = readingDone && prayerAllDone
+  // On Sunday/Saturday there's no chapter reading — only prayer counts for completion
+  const dayComplete = isSun || isSat ? prayerAllDone : readingDone && prayerAllDone
 
   // Avatar display helper
   const AvatarDisplay = ({ size = 60, fontSize = 22 }) => {
@@ -101,7 +102,7 @@ export default function Dashboard() {
             <div>
               <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Grow Together, one day at a time.</div>
               <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
-                {getTimeOfDay()},<br />{profile?.display_name || 'friend'}.
+                {getTimeOfDay()},<br />{(profile?.display_name || 'friend').replace(/\s*[\u{1F300}-\u{1F9FF}]/gu, '').trim()}.
               </div>
             </div>
           ) : (
@@ -298,6 +299,15 @@ function TodayTab({ isSat, isSun, weekData, currentWeek, todayReading, todayDayI
 
   if (isSun) return (
     <div style={{ padding: '24px 18px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {dayComplete && (
+        <div style={{ background: '#EAF3DE', border: '0.5px solid #97C459', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <i className="ti ti-circle-check" style={{ fontSize: '22px', color: '#2D5016', flexShrink: 0 }} aria-hidden="true" />
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: '#27500A' }}>Day complete</div>
+            <div style={{ fontSize: '12px', color: '#3B6D11', marginTop: '1px', fontStyle: 'italic' }}>Prayer done. God is pleased.</div>
+          </div>
+        </div>
+      )}
       <div style={{ background: '#fff', borderRadius: '20px', border: '0.5px solid #e8e6e2', padding: '32px 20px', textAlign: 'center' }}>
         <div style={{ fontSize: '40px', marginBottom: '12px' }}>✝</div>
         <div style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a12', marginBottom: '6px' }}>Sunday rest</div>
@@ -461,77 +471,89 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const todayDOW = today.getDay() // 0=Sun, 1=Mon ... 6=Sat
+  const todayDOW = today.getDay()
+  const isFutureWeek = weekNum > currentWeek
+  const isPastWeek = weekNum < currentWeek
 
   const getDayState = (dayIndex) => {
-    // dayIndex: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
-    // dayIndex + 1 = getDay() equivalent (Mon=1 ... Fri=5)
+    if (isFutureWeek) return 'future'
+    if (isPastWeek) return 'past'
     const dayDOW = dayIndex + 1
     if (todayDOW === dayDOW) return 'today'
-    if (todayDOW === 0 || todayDOW > dayDOW) return 'past' // Sunday or later in week
+    if (todayDOW === 0 || todayDOW > dayDOW) return 'past'
     return 'future'
   }
+
+  const weekLabel = isFutureWeek ? `Week ${weekNum} — upcoming` : isPastWeek ? `Week ${weekNum} — past` : 'This week'
 
   return (
     <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>SS Lesson {ssLesson}</div>
-          <div style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a12' }}>This week</div>
+          <div style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a12' }}>{weekLabel}</div>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          {[['←', currentWeek > 1, () => setCurrentWeek(w => w - 1)], ['→', currentWeek < READING_PLAN.length, () => setCurrentWeek(w => w + 1)]].map(([lbl, enabled, fn]) => (
+          {[
+            ['←', weekNum > 1, () => setCurrentWeek(w => w - 1)],
+            ['→', weekNum < currentWeek, () => setCurrentWeek(w => w + 1)],
+          ].map(([lbl, enabled, fn]) => (
             <button key={lbl} disabled={!enabled} onClick={fn} style={{ width: '32px', height: '32px', borderRadius: '9px', border: '0.5px solid #d8d6d2', background: 'none', fontSize: '14px', color: enabled ? '#1a1a12' : '#ccc', cursor: enabled ? 'pointer' : 'not-allowed' }}>{lbl}</button>
           ))}
         </div>
       </div>
 
-      <div>
-        <div style={{ height: '6px', background: '#e8e6e2', borderRadius: '999px', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${Math.round((doneCount / days.length) * 100)}%`, background: '#1a3a0a', borderRadius: '999px' }} />
+      {isFutureWeek ? (
+        <div style={{ background: '#f5f4f1', border: '0.5px solid #e8e6e2', borderRadius: '12px', padding: '16px', fontSize: '14px', color: '#888', textAlign: 'center', lineHeight: '1.6' }}>
+          This week hasn't started yet.<br />Come back when it does.
         </div>
-        <div style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>{doneCount} of {days.length} days read</div>
-      </div>
-
-      <div style={{ background: '#fff', border: '0.5px solid #e8e6e2', borderRadius: '16px', overflow: 'hidden' }}>
-        {weekReadings.map((day, i) => {
-          const state = getDayState(day.dayIndex)
-          const isToday = state === 'today'
-          const isFuture = state === 'future'
-          const rowBg = day.done ? '#f7fbf7' : isToday ? '#FAFEF7' : '#fff'
-          const dayLabelColor = day.done ? '#1a3a0a' : isToday ? '#1a3a0a' : isFuture ? '#ccc' : '#888'
-          const textColor = isFuture ? '#ccc' : '#1a1a12'
-          return (
-            <div key={day.dayIndex} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 14px', borderBottom: i < weekReadings.length - 1 ? '0.5px solid #f0ede6' : 'none', background: rowBg, borderLeft: isToday ? '3px solid #1a3a0a' : '3px solid transparent' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: dayLabelColor, width: '32px', flexShrink: 0 }}>{day.dayName.slice(0, 3)}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', color: textColor, fontWeight: isToday ? '600' : '500' }}>{day.label}</div>
-                {day.verse && <div style={{ fontSize: '11px', color: '#888', fontStyle: 'italic', marginTop: '2px' }}>"{day.verse}"</div>}
-                {day.readSSLesson && !isFuture && <div style={{ fontSize: '11px', color: '#185FA5', marginTop: '2px' }}>📚 Start SS Lesson {ssLesson}</div>}
-              </div>
-              {isFuture ? (
-                <div style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1.5px dashed #e0ddd8', flexShrink: 0 }} />
-              ) : (
-                <button onClick={() => { myProgress.markReading(weekNum, day.dayIndex, !day.done); if (!day.done) celebrate('Reading marked!') }} style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1.5px solid ${day.done ? '#1a3a0a' : '#d8d6d2'}`, background: day.done ? '#1a3a0a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  {day.done && <i className="ti ti-check" style={{ fontSize: '12px', color: '#fff' }} aria-hidden="true" />}
-                </button>
-              )}
+      ) : (
+        <>
+          <div>
+            <div style={{ height: '6px', background: '#e8e6e2', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.round((doneCount / days.length) * 100)}%`, background: '#1a3a0a', borderRadius: '999px' }} />
             </div>
-          )
-        })}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#FAEEDA', borderTop: '0.5px solid #EF9F27', borderLeft: '3px solid transparent' }}>
-          <span style={{ fontSize: '12px', fontWeight: '600', color: '#854F0B', width: '32px', flexShrink: 0 }}>Sat</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '13px', color: '#854F0B', fontWeight: '500' }}>SS review + memorise verse</div>
-            {weeklyVerse && <div style={{ fontSize: '11px', color: '#BA7517', fontStyle: 'italic', marginTop: '2px' }}>"{weeklyVerse}"</div>}
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>{doneCount} of {days.length} days read</div>
           </div>
-          <div style={{ fontSize: '11px', color: '#854F0B', textAlign: 'right', flexShrink: 0 }}>
-            <div>{ssData.lesson_read ? '✓' : '○'} read</div>
-            <div>{ssData.lesson_reviewed ? '✓' : '○'} reviewed</div>
+
+          <div style={{ background: '#fff', border: '0.5px solid #e8e6e2', borderRadius: '16px', overflow: 'hidden' }}>
+            {weekReadings.map((day, i) => {
+              const state = getDayState(day.dayIndex)
+              const isToday = state === 'today'
+              const isFuture = state === 'future'
+              return (
+                <div key={day.dayIndex} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 14px', borderBottom: i < weekReadings.length - 1 ? '0.5px solid #f0ede6' : 'none', background: day.done ? '#f7fbf7' : isToday ? '#FAFEF7' : '#fff', borderLeft: isToday ? '3px solid #1a3a0a' : '3px solid transparent' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: day.done ? '#1a3a0a' : isToday ? '#1a3a0a' : isFuture ? '#ccc' : '#888', width: '32px', flexShrink: 0 }}>{day.dayName.slice(0, 3)}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', color: isFuture ? '#ccc' : '#1a1a12', fontWeight: isToday ? '600' : '500' }}>{day.label}</div>
+                    {day.verse && !isFuture && <div style={{ fontSize: '11px', color: '#888', fontStyle: 'italic', marginTop: '2px' }}>"{day.verse}"</div>}
+                    {day.readSSLesson && !isFuture && <div style={{ fontSize: '11px', color: '#185FA5', marginTop: '2px' }}>📚 Start SS Lesson {ssLesson}</div>}
+                  </div>
+                  {isFuture ? (
+                    <div style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1.5px dashed #e0ddd8', flexShrink: 0 }} />
+                  ) : (
+                    <button onClick={() => { myProgress.markReading(weekNum, day.dayIndex, !day.done); if (!day.done) celebrate('Reading marked!') }} style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1.5px solid ${day.done ? '#1a3a0a' : '#d8d6d2'}`, background: day.done ? '#1a3a0a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                      {day.done && <i className="ti ti-check" style={{ fontSize: '12px', color: '#fff' }} aria-hidden="true" />}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#FAEEDA', borderTop: '0.5px solid #EF9F27', borderLeft: '3px solid transparent' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#854F0B', width: '32px', flexShrink: 0 }}>Sat</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', color: '#854F0B', fontWeight: '500' }}>SS review + memorise verse</div>
+                {weeklyVerse && <div style={{ fontSize: '11px', color: '#BA7517', fontStyle: 'italic', marginTop: '2px' }}>"{weeklyVerse}"</div>}
+              </div>
+              <div style={{ fontSize: '11px', color: '#854F0B', textAlign: 'right', flexShrink: 0 }}>
+                <div>{ssData.lesson_read ? '✓' : '○'} read</div>
+                <div>{ssData.lesson_reviewed ? '✓' : '○'} reviewed</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <a href={SS_LESSON_URL} target="_blank" rel="noreferrer" style={{ textAlign: 'center', display: 'block', fontSize: '13px', color: '#185FA5', textDecoration: 'none', fontWeight: '500' }}>Open Sunday school lesson library →</a>
+          <a href={SS_LESSON_URL} target="_blank" rel="noreferrer" style={{ textAlign: 'center', display: 'block', fontSize: '13px', color: '#185FA5', textDecoration: 'none', fontWeight: '500' }}>Open Sunday school lesson library →</a>
+        </>
+      )}
     </div>
   )
 }
@@ -548,14 +570,18 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
 
   const getDayStatus = (d) => {
     const date = new Date(year, month, d)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const todayCheck = new Date()
+    todayCheck.setHours(0, 0, 0, 0)
     date.setHours(0, 0, 0, 0)
     const dow = date.getDay()
-    if (dow === 0) return 'sunday'
+    if (dow === 0) {
+      // Sunday — check if prayer was done
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+      const p = myProgress.data.prayers[dateStr]
+      return (p?.morning || p?.night) ? 'sunday_done' : 'sunday'
+    }
     if (dow === 6) return 'saturday'
-    // Future dates are always upcoming
-    if (date > today) return 'future'
+    if (date > todayCheck) return 'future'
     const diffDays = Math.floor((date - startDate) / 86400000)
     if (diffDays < 0) return 'future'
     const weekN = Math.floor(diffDays / 7) + 1
@@ -591,12 +617,13 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
             const status = getDayStatus(d)
             const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
             const styles = {
-              complete: { bg: '#1a3a0a', color: '#fff' },
-              saturday: { bg: '#FAEEDA', color: '#854F0B', fontSize: '9px' },
-              sunday:   { bg: 'transparent', color: '#ddd' },
-              missed:   { bg: '#f5f4f1', color: '#ccc' },
-              future:   { bg: '#f5f4f1', color: '#888' },
-            }[status]
+              complete:     { bg: '#1a3a0a', color: '#fff' },
+              saturday:     { bg: '#FAEEDA', color: '#854F0B', fontSize: '9px' },
+              sunday_done:  { bg: '#EAF3DE', color: '#27500A' },
+              sunday:       { bg: 'transparent', color: '#ddd' },
+              missed:       { bg: '#f5f4f1', color: '#bbb' },
+              future:       { bg: '#f5f4f1', color: '#888' },
+            }[status] || { bg: '#f5f4f1', color: '#888' }
             return (
               <div key={d} style={{ aspectRatio: '1', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: styles.fontSize || '12px', fontWeight: isToday ? '700' : '400', background: styles.bg, color: styles.color, border: isToday ? '2px solid #BA7517' : '0.5px solid transparent' }}>
                 {status === 'saturday' ? 'SS' : d}

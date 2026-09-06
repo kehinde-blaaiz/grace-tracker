@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState('')
   const [showStreakPopup, setShowStreakPopup] = useState(false)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [calMonth, setCalMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }))
 
   useEffect(() => {
@@ -49,19 +50,33 @@ export default function Dashboard() {
   const prayerAllDone = prayerSlots.length > 0 && prayerSlots.every(s => prayerData[s.key])
   const dayComplete = readingDone && prayerAllDone
 
+  // Avatar display helper
+  const AvatarDisplay = ({ size = 60, fontSize = 22 }) => {
+    const url = profile?.avatar_url
+    const initial = (profile?.display_name || 'U')[0].toUpperCase()
+    return (
+      <div style={{ width: size, height: size, borderRadius: '50%', background: profile?.avatar_color || '#1a3a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: url?.startsWith('emoji:') ? size * 0.48 : fontSize, fontWeight: '600', border: '3px solid #fff', boxShadow: '0 0 0 1.5px #e8e6e2', overflow: 'hidden', flexShrink: 0 }}>
+        {url?.startsWith('emoji:') ? url.replace('emoji:', '') : url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
+      </div>
+    )
+  }
+
   if (myProgress.loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#f5f4f1' }}>
-      <img src="/grace-logo.png" alt="" style={{ width: 60, height: 60, borderRadius: 14, opacity: 0.7 }} />
+      <div style={{ width: 60, height: 60, borderRadius: 14, background: '#0d0d0a', overflow: 'hidden' }}>
+        <img src="/grace-logo.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
       <div style={{ fontSize: '14px', color: '#888' }}>Loading…</div>
     </div>
   )
 
-  const s = (tag) => ({ color: activeTab === tag ? '#1a3a0a' : '#bbb', fontWeight: activeTab === tag ? '600' : '400' })
+  const navColor = (id) => ({ color: activeTab === id ? '#1a3a0a' : '#bbb', fontWeight: activeTab === id ? '600' : '400' })
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f4f1', fontFamily: '-apple-system, sans-serif' }}>
+
       {toast && (
-        <div style={{ position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', background: '#1a3a0a', color: '#fff', padding: '10px 20px', borderRadius: '999px', fontSize: '13px', zIndex: 100 }}>
+        <div style={{ position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', background: '#1a3a0a', color: '#fff', padding: '10px 20px', borderRadius: '999px', fontSize: '13px', zIndex: 100, whiteSpace: 'nowrap' }}>
           {toast}
         </div>
       )}
@@ -86,54 +101,35 @@ export default function Dashboard() {
 
       {/* CONTENT */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '70px' }}>
-
-        {/* ── TODAY ── */}
         {activeTab === 'today' && weekData && (
-          <TodayTab
-            isSat={isSat} isSun={isSun} weekData={weekData} currentWeek={currentWeek}
-            todayReading={todayReading} todayDayIndex={todayDayIndex}
-            myProgress={myProgress} todayKey={todayKey} prayerSlots={prayerSlots}
-            dayComplete={dayComplete} celebrate={celebrate} profile={profile}
-            SS_LESSON_URL={SS_LESSON_URL}
-          />
+          <TodayTab isSat={isSat} isSun={isSun} weekData={weekData} currentWeek={currentWeek} todayReading={todayReading} todayDayIndex={todayDayIndex} myProgress={myProgress} todayKey={todayKey} prayerSlots={prayerSlots} dayComplete={dayComplete} celebrate={celebrate} profile={profile} />
         )}
-
-        {/* ── WEEK ── */}
         {activeTab === 'week' && weekData && (
-          <WeekTab weekData={weekData} currentWeek={currentWeek} setCurrentWeek={setCurrentWeek}
-            myProgress={myProgress} celebrate={celebrate} SS_LESSON_URL={SS_LESSON_URL} />
+          <WeekTab weekData={weekData} currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} myProgress={myProgress} celebrate={celebrate} />
         )}
-
-        {/* ── CALENDAR ── */}
         {activeTab === 'calendar' && (
           <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} />
         )}
-
-        {/* ── PARTNER ── */}
         {activeTab === 'partner' && (
-          <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek}
-            myProfile={profile} currentUserId={currentUserId} />
+          <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} />
         )}
-
-        {/* ── PROFILE ── */}
         {activeTab === 'profile' && (
-          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress}
-            signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} />
+          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} />
         )}
       </div>
 
       {/* BOTTOM NAV */}
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', height: '60px', background: '#fff', borderTop: '0.5px solid #e8e6e2', display: 'flex', alignItems: 'center', justifyContent: 'space-around', paddingBottom: '6px', zIndex: 50 }}>
         {[
-          { id: 'today',    icon: 'ti-sun',          label: 'Today' },
-          { id: 'week',     icon: 'ti-layout-list',  label: 'Week' },
-          { id: 'calendar', icon: 'ti-calendar',     label: 'Calendar' },
-          { id: 'partner',  icon: 'ti-heart',        label: partner?.display_name || 'Partner' },
-          { id: 'profile',  icon: 'ti-user-circle',  label: 'Profile' },
+          { id: 'today',    icon: 'ti-sun',         label: 'Today' },
+          { id: 'week',     icon: 'ti-layout-list', label: 'Week' },
+          { id: 'calendar', icon: 'ti-calendar',    label: 'Calendar' },
+          { id: 'partner',  icon: 'ti-heart',       label: partner?.display_name || 'Partner' },
+          { id: 'profile',  icon: 'ti-user-circle', label: 'Profile' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flex: 1, border: 'none', background: 'none', cursor: 'pointer', padding: '6px 4px 0' }}>
-            <i className={`ti ${tab.icon}`} style={{ fontSize: '20px', ...s(tab.id) }} aria-hidden="true" />
-            <span style={{ fontSize: '9px', ...s(tab.id) }}>{tab.label}</span>
+            <i className={`ti ${tab.icon}`} style={{ fontSize: '20px', ...navColor(tab.id) }} aria-hidden="true" />
+            <span style={{ fontSize: '9px', ...navColor(tab.id) }}>{tab.label}</span>
             {activeTab === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#1a3a0a' }} />}
           </button>
         ))}
@@ -172,22 +168,67 @@ export default function Dashboard() {
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '340px' }}>
             <div style={{ fontSize: '16px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Profile photo</div>
             <div style={{ fontSize: '13px', color: '#888', marginBottom: '16px' }}>Choose how your avatar appears.</div>
+
+            {/* Hidden inputs */}
+            <input type="file" accept="image/*" id="avatar-upload" style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = async (ev) => {
+                  await updateProfile({ avatar_url: ev.target.result })
+                  setShowAvatarPicker(false)
+                }
+                reader.readAsDataURL(file)
+              }}
+            />
+            <input type="file" accept="image/*" capture="user" id="avatar-camera" style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = async (ev) => {
+                  await updateProfile({ avatar_url: ev.target.result })
+                  setShowAvatarPicker(false)
+                }
+                reader.readAsDataURL(file)
+              }}
+            />
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {[
-                { icon: 'ti-camera', label: 'Take photo', bg: '#EAF3DE', color: '#1a3a0a' },
-                { icon: 'ti-photo',  label: 'Upload image', bg: '#E6F1FB', color: '#185FA5' },
-                { icon: 'ti-mood-smile', label: 'Choose emoji', bg: '#FAEEDA', color: '#BA7517' },
-                { icon: 'ti-trash', label: 'Remove photo', bg: '#FCEBEB', color: '#A32D2D', danger: true },
+                { label: 'Take photo',    icon: 'ti-camera',     bg: '#EAF3DE', color: '#1a3a0a', action: () => document.getElementById('avatar-camera').click() },
+                { label: 'Upload image',  icon: 'ti-photo',      bg: '#E6F1FB', color: '#185FA5', action: () => document.getElementById('avatar-upload').click() },
+                { label: 'Choose emoji',  icon: 'ti-mood-smile', bg: '#FAEEDA', color: '#BA7517', action: () => { setShowAvatarPicker(false); setShowEmojiPicker(true) } },
+                { label: 'Remove photo',  icon: 'ti-trash',      bg: '#FCEBEB', color: '#A32D2D', action: async () => { await updateProfile({ avatar_url: null }); setShowAvatarPicker(false) }, danger: true },
               ].map(opt => (
-                <button key={opt.label} style={{ border: `0.5px solid ${opt.danger ? '#F09595' : '#e8e6e2'}`, borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', cursor: 'pointer' }}>
+                <button key={opt.label} onClick={opt.action} style={{ border: `0.5px solid ${opt.danger ? '#F09595' : '#e8e6e2'}`, borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', cursor: 'pointer' }}>
                   <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: opt.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <i className={`ti ${opt.icon}`} style={{ fontSize: '16px', color: opt.color }} aria-hidden="true" />
                   </div>
-                  <span style={{ fontSize: '13px', color: opt.danger ? '#A32D2D' : '#1a1a12', fontWeight: '500' }}>{opt.label}</span>
+                  <span style={{ fontSize: '13px', color: opt.danger ? '#A32D2D' : '#1a1a12', fontWeight: '500', textAlign: 'left' }}>{opt.label}</span>
                 </button>
               ))}
             </div>
+
             <button onClick={() => setShowAvatarPicker(false)} style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '12px', color: '#666', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* EMOJI PICKER */}
+      {showEmojiPicker && (
+        <div onClick={() => setShowEmojiPicker(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '340px' }}>
+            <div style={{ fontSize: '16px', fontWeight: '600', color: '#1a1a12', marginBottom: '16px' }}>Choose an emoji</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+              {['😊','🙏','✝️','⭐','🌱','🕊️','👑','🛡️','🌟','⚓','🔥','💎','🌿','🍃','🦋','📖','🌸','🏆'].map(emoji => (
+                <button key={emoji} onClick={async () => { await updateProfile({ avatar_url: `emoji:${emoji}` }); setShowEmojiPicker(false) }} style={{ fontSize: '24px', padding: '8px', border: '0.5px solid #e8e6e2', borderRadius: '10px', background: 'none', cursor: 'pointer' }}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowEmojiPicker(false)} style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '12px', color: '#666', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
           </div>
         </div>
       )}
@@ -196,7 +237,7 @@ export default function Dashboard() {
 }
 
 // ── Today tab ──────────────────────────────────────────────────────────────────
-function TodayTab({ isSat, isSun, weekData, currentWeek, todayReading, todayDayIndex, myProgress, todayKey, prayerSlots, dayComplete, celebrate, profile, SS_LESSON_URL }) {
+function TodayTab({ isSat, isSun, weekData, currentWeek, todayReading, todayDayIndex, myProgress, todayKey, prayerSlots, dayComplete, celebrate, profile }) {
   const [verseNote, setVerseNote] = useState('')
   const [editingVerse, setEditingVerse] = useState(false)
   const [dayCompleteCelebrated, setDayCompleteCelebrated] = useState(false)
@@ -235,17 +276,15 @@ function TodayTab({ isSat, isSun, weekData, currentWeek, todayReading, todayDayI
           <span style={{ fontSize: '11px', fontWeight: '600', color: '#185FA5', letterSpacing: '0.05em' }}>SUNDAY SCHOOL</span>
           <span style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a12' }}>Lesson {weekData.ssLesson}</span>
         </div>
-        {[{ field: 'lesson_read', label: "I've read this week's lesson" }, { field: 'lesson_reviewed', label: 'Reviewed with partner' }].map(item => (
-          <label key={item.field} onClick={() => { myProgress.markSSLesson(weekData.weekNum, item.field, !ssData[item.field]); if (!ssData[item.field]) celebrate('Done!') }} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '0.5px solid #f0ede6', cursor: 'pointer' }}>
+        {[{ field: 'lesson_read', label: "I've read this week's lesson" }, { field: 'lesson_reviewed', label: 'Reviewed with partner' }].map((item, i) => (
+          <label key={item.field} onClick={() => { myProgress.markSSLesson(weekData.weekNum, item.field, !ssData[item.field]); if (!ssData[item.field]) celebrate('Done!') }} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: i === 0 ? '0.5px solid #f0ede6' : 'none', cursor: 'pointer' }}>
             <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `1.5px solid ${ssData[item.field] ? '#1a3a0a' : '#d8d6d2'}`, background: ssData[item.field] ? '#1a3a0a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {ssData[item.field] && <i className="ti ti-check" style={{ fontSize: '12px', color: '#fff' }} aria-hidden="true" />}
             </div>
             <span style={{ fontSize: '14px', color: '#1a1a12' }}>{item.label}</span>
           </label>
         ))}
-        <a href={SS_LESSON_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '12px', fontSize: '13px', color: '#185FA5', textDecoration: 'none', fontWeight: '500' }}>
-          Open Sunday school library →
-        </a>
+        <a href={SS_LESSON_URL} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '12px', fontSize: '13px', color: '#185FA5', textDecoration: 'none', fontWeight: '500' }}>Open Sunday school library →</a>
       </div>
       <WeeklyVerseCard weekNum={weekData.weekNum} myProgress={myProgress} />
       <PrayerCard slots={prayerSlots} prayerData={prayerData} todayKey={todayKey} myProgress={myProgress} celebrate={celebrate} />
@@ -295,7 +334,7 @@ function TodayTab({ isSat, isSun, weekData, currentWeek, todayReading, todayDayI
             <div style={{ fontSize: '11px', fontWeight: '600', color: '#999', letterSpacing: '0.05em', marginBottom: '10px' }}>ONE VERSE THAT CAUGHT YOUR EYE</div>
             {editingVerse || !savedVerse ? (
               <>
-                <textarea value={verseNote} onChange={e => setVerseNote(e.target.value)} placeholder={`e.g. ${todayReading.label.split(' ')[0]} 1:1 — In the beginning...`} rows={3} style={{ width: '100%', border: '0.5px solid #e8e6e2', borderRadius: '12px', padding: '10px 12px', fontSize: '13px', fontFamily: 'inherit', fontStyle: 'italic', background: '#f5f4f1', outline: 'none', color: '#1a1a12', resize: 'none', lineHeight: '1.6' }} />
+                <textarea value={verseNote} onChange={e => setVerseNote(e.target.value)} placeholder={`e.g. ${todayReading.label} — In the beginning...`} rows={3} style={{ width: '100%', border: '0.5px solid #e8e6e2', borderRadius: '12px', padding: '10px 12px', fontSize: '13px', fontFamily: 'inherit', fontStyle: 'italic', background: '#f5f4f1', outline: 'none', color: '#1a1a12', resize: 'none', lineHeight: '1.6' }} />
                 <button onClick={() => { myProgress.saveVerse(currentWeek, todayDayIndex, verseNote); setEditingVerse(false); celebrate('Verse saved!') }} style={{ marginTop: '8px', padding: '8px 16px', background: '#1a3a0a', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' }}>Save verse</button>
               </>
             ) : (
@@ -311,7 +350,6 @@ function TodayTab({ isSat, isSun, weekData, currentWeek, todayReading, todayDayI
       )}
 
       <PrayerCard slots={prayerSlots} prayerData={prayerData} todayKey={todayKey} myProgress={myProgress} celebrate={celebrate} />
-      {profile?.offering_amount > 0 && isSun && <OfferingCard data={myProgress.data.offerings[todayKey]} todayKey={todayKey} myProgress={myProgress} offeringAmount={profile.offering_amount} />}
     </div>
   )
 }
@@ -360,7 +398,7 @@ function OfferingCard({ data, todayKey, myProgress, offeringAmount }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ fontSize: '15px', color: '#BA7517', fontWeight: '600' }}>₦</span>
         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} style={{ flex: 1, border: '0.5px solid #EF9F27', borderRadius: '10px', padding: '8px 12px', fontSize: '14px', background: '#fff', outline: 'none', fontFamily: 'inherit' }} />
-        <button onClick={() => myProgress.saveOffering(todayKey, Number(amount), !given)} style={{ padding: '8px 14px', background: given ? '#BA7517' : 'transparent', border: `1.5px solid #BA7517`, borderRadius: '10px', color: given ? '#fff' : '#BA7517', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <button onClick={() => myProgress.saveOffering(todayKey, Number(amount), !given)} style={{ padding: '8px 14px', background: given ? '#BA7517' : 'transparent', border: '1.5px solid #BA7517', borderRadius: '10px', color: given ? '#fff' : '#BA7517', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           {given ? '✓ Given' : 'Mark given'}
         </button>
       </div>
@@ -370,7 +408,7 @@ function OfferingCard({ data, todayKey, myProgress, offeringAmount }) {
 }
 
 // ── Week tab ───────────────────────────────────────────────────────────────────
-function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate, SS_LESSON_URL }) {
+function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate }) {
   const { days, ssLesson, weekNum } = weekData
   const ssData = myProgress.data.ssProgress[`w${weekNum}`] || {}
   const weekReadings = days.map(day => ({ ...day, done: !!myProgress.data.readings[`w${weekNum}_d${day.dayIndex}`]?.done, verse: myProgress.data.verses[`w${weekNum}_d${day.dayIndex}`] || '' }))
@@ -392,7 +430,7 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate,
       </div>
 
       <div>
-        <div style={{ height: '6px', background: '#e8e6e2', borderRadius: '999px', overflow: 'hidden', border: '0.5px solid #e0ddd8' }}>
+        <div style={{ height: '6px', background: '#e8e6e2', borderRadius: '999px', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${Math.round((doneCount / days.length) * 100)}%`, background: '#1a3a0a', borderRadius: '999px' }} />
         </div>
         <div style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>{doneCount} of {days.length} days read</div>
@@ -477,21 +515,24 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
           {totalDays.map(d => {
             const status = getDayStatus(d)
             const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-            const bgMap = { complete: '#1a3a0a', saturday: '#FAEEDA', sunday: 'transparent', missed: '#f5f4f1', future: '#f5f4f1' }
-            const colorMap = { complete: '#fff', saturday: '#854F0B', sunday: '#ccc', missed: '#ccc', future: '#888' }
+            const styles = {
+              complete: { bg: '#1a3a0a', color: '#fff' },
+              saturday: { bg: '#FAEEDA', color: '#854F0B', fontSize: '9px' },
+              sunday:   { bg: 'transparent', color: '#ddd' },
+              missed:   { bg: '#f5f4f1', color: '#ccc' },
+              future:   { bg: '#f5f4f1', color: '#888' },
+            }[status]
             return (
-              <div key={d} style={{ aspectRatio: '1', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: status === 'saturday' ? '9px' : '12px', fontWeight: isToday ? '700' : '400', background: bgMap[status], color: colorMap[status], border: isToday ? '2px solid #BA7517' : '0.5px solid transparent', }}>
+              <div key={d} style={{ aspectRatio: '1', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: styles.fontSize || '12px', fontWeight: isToday ? '700' : '400', background: styles.bg, color: styles.color, border: isToday ? '2px solid #BA7517' : '0.5px solid transparent' }}>
                 {status === 'saturday' ? 'SS' : d}
               </div>
             )
           })}
         </div>
-
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', paddingTop: '10px', borderTop: '0.5px solid #f0ede6' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px', paddingTop: '10px', borderTop: '0.5px solid #f0ede6' }}>
           {[['#1a3a0a', 'Complete'], ['#FAEEDA', 'Saturday'], ['#f5f4f1', 'Upcoming']].map(([bg, lbl]) => (
             <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#888' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: bg, border: '0.5px solid #e8e6e2' }} />
-              {lbl}
+              <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: bg, border: '0.5px solid #e8e6e2' }} />{lbl}
             </div>
           ))}
           <div style={{ fontSize: '11px', color: '#BA7517', fontWeight: '600', border: '1.5px solid #BA7517', padding: '1px 6px', borderRadius: '5px' }}>today</div>
@@ -541,13 +582,19 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   const ssData = partnerProgress.data.ssProgress[`w${viewWeek}`] || {}
   const weeklyVerse = partnerProgress.data.weeklyVerses[`w${viewWeek}`] || ''
 
+  // Partner avatar
+  const partnerAvatarUrl = partner.avatar_url
+  const PartnerAvatar = () => (
+    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: partner.avatar_color || '#085041', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: partnerAvatarUrl?.startsWith('emoji:') ? '26px' : '20px', fontWeight: '600', flexShrink: 0, overflow: 'hidden' }}>
+      {partnerAvatarUrl?.startsWith('emoji:') ? partnerAvatarUrl.replace('emoji:', '') : partnerAvatarUrl ? <img src={partnerAvatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (partner.display_name || 'P')[0].toUpperCase()}
+    </div>
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: '#fff', padding: '20px 18px 16px', borderBottom: '0.5px solid #e8e6e2' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: partner.avatar_color || '#085041', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', fontWeight: '600', flexShrink: 0 }}>
-            {(partner.display_name || 'P')[0].toUpperCase()}
-          </div>
+          <PartnerAvatar />
           <div>
             <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12' }}>{partner.display_name}</div>
             <div style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>{streakTitle.emoji} {streakTitle.title} · {streak} day streak</div>
@@ -577,7 +624,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
           {weekReadings.map(day => (
             <div key={day.dayIndex} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
               <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: day.done ? '#1a3a0a' : '#f5f4f1', border: `0.5px solid ${day.done ? '#1a3a0a' : '#e8e6e2'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: day.done ? '#fff' : '#888' }}>
-                {day.done ? <i className="ti ti-check" style={{ fontSize: '12px' }} aria-hidden="true" /> : ''}
+                {day.done && <i className="ti ti-check" style={{ fontSize: '12px' }} aria-hidden="true" />}
               </div>
               <span style={{ fontSize: '9px', color: '#888' }}>{day.dayName.slice(0, 3)}</span>
             </div>
@@ -592,7 +639,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
         {weekReadings.some(d => d.verse) && (
           <div style={{ background: '#fff', border: '0.5px solid #e8e6e2', borderRadius: '14px', overflow: 'hidden' }}>
             <div style={{ padding: '10px 14px 6px', fontSize: '11px', fontWeight: '600', color: '#999', letterSpacing: '0.05em' }}>VERSES NOTED</div>
-            {weekReadings.filter(d => d.verse).map((day, i, arr) => (
+            {weekReadings.filter(d => d.verse).map(day => (
               <div key={day.dayIndex} style={{ padding: '8px 14px', borderTop: '0.5px solid #f0ede6' }}>
                 <div style={{ fontSize: '10px', color: '#aaa', letterSpacing: '0.05em', marginBottom: '3px' }}>{day.dayName.toUpperCase()}</div>
                 <div style={{ fontSize: '13px', fontStyle: 'italic', color: '#555', lineHeight: '1.5' }}>"{day.verse}"</div>
@@ -602,12 +649,8 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
         )}
 
         <div style={{ background: '#fff', border: '0.5px solid #e8e6e2', borderRadius: '14px', padding: '14px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '600', color: '#999', letterSpacing: '0.05em', marginBottom: '8px' }}>{isCurrentWeek ? "MEMORISING THIS WEEK" : `WEEK ${viewWeek} MEMORISATION`}</div>
-          {weeklyVerse ? (
-            <div style={{ fontSize: '14px', fontStyle: 'italic', color: '#1a1a12', lineHeight: '1.6' }}>"{weeklyVerse}"</div>
-          ) : (
-            <div style={{ fontSize: '13px', color: '#aaa' }}>Not set yet</div>
-          )}
+          <div style={{ fontSize: '11px', fontWeight: '600', color: '#999', letterSpacing: '0.05em', marginBottom: '8px' }}>{isCurrentWeek ? 'MEMORISING THIS WEEK' : `WEEK ${viewWeek} MEMORISATION`}</div>
+          {weeklyVerse ? <div style={{ fontSize: '14px', fontStyle: 'italic', color: '#1a1a12', lineHeight: '1.6' }}>"{weeklyVerse}"</div> : <div style={{ fontSize: '13px', color: '#aaa' }}>Not set yet</div>}
         </div>
 
         {isCurrentWeek && (
@@ -622,7 +665,6 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
                 </div>
               ))}
             </div>
-
             <NudgeButton fromUserId={currentUserId} fromName={myProfile?.display_name || 'your partner'} toUserId={partner.id} toName={partner.display_name} />
           </>
         )}
@@ -632,7 +674,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
 }
 
 // ── Profile tab ────────────────────────────────────────────────────────────────
-function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle }) {
+function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay }) {
   const [name, setName] = useState(profile?.display_name || '')
   const [offering, setOffering] = useState(profile?.offering_amount || '')
   const streak = myProgress.data.streak.last_active_date ? myProgress.data.streak.current_streak : 0
@@ -642,9 +684,7 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
       <div style={{ background: '#fff', padding: '20px 18px 18px', borderBottom: '0.5px solid #e8e6e2' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: profile?.avatar_color || '#1a3a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '22px', fontWeight: '600', border: '3px solid #fff', boxShadow: '0 0 0 1.5px #e8e6e2' }}>
-              {(profile?.display_name || 'U')[0].toUpperCase()}
-            </div>
+            <AvatarDisplay size={60} fontSize={22} />
             <button onClick={() => setShowAvatarPicker(true)} style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', border: '0.5px solid #d8d6d2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <i className="ti ti-pencil" style={{ fontSize: '11px', color: '#888' }} aria-hidden="true" />
             </button>
@@ -670,29 +710,27 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
         <NotificationSettings profile={profile} updateProfile={updateProfile} />
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', overflow: 'hidden' }}>
-          {[
-            { icon: 'ti-coin', iconBg: '#FAEEDA', iconColor: '#BA7517', label: 'Sunday offering', content: (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '13px', color: '#BA7517', fontWeight: '600' }}>₦</span>
-                <input type="number" value={offering} onChange={e => setOffering(e.target.value)} style={{ width: '80px', border: 'none', fontSize: '13px', color: '#888', background: 'transparent', outline: 'none', fontFamily: 'inherit', textAlign: 'right' }} />
-                <button onClick={() => updateProfile({ offering_amount: Number(offering) })} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
-              </div>
-            )},
-            { icon: 'ti-user', iconBg: '#f5f4f1', iconColor: '#555', label: 'Display name', content: (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ width: '80px', border: 'none', fontSize: '13px', color: '#888', background: 'transparent', outline: 'none', fontFamily: 'inherit', textAlign: 'right' }} />
-                <button onClick={() => updateProfile({ display_name: name })} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
-              </div>
-            )},
-          ].map((row, i, arr) => (
-            <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid #f0ede6' : 'none' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: row.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <i className={`ti ${row.icon}`} style={{ fontSize: '15px', color: row.iconColor }} aria-hidden="true" />
-              </div>
-              <span style={{ flex: 1, fontSize: '14px', color: '#1a1a12' }}>{row.label}</span>
-              {row.content}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="ti ti-coin" style={{ fontSize: '15px', color: '#BA7517' }} aria-hidden="true" />
             </div>
-          ))}
+            <span style={{ flex: 1, fontSize: '14px', color: '#1a1a12' }}>Sunday offering</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '13px', color: '#BA7517', fontWeight: '600' }}>₦</span>
+              <input type="number" value={offering} onChange={e => setOffering(e.target.value)} style={{ width: '70px', border: 'none', fontSize: '13px', color: '#888', background: 'transparent', outline: 'none', fontFamily: 'inherit', textAlign: 'right' }} />
+              <button onClick={() => updateProfile({ offering_amount: Number(offering) })} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: '#f5f4f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="ti ti-user" style={{ fontSize: '15px', color: '#555' }} aria-hidden="true" />
+            </div>
+            <span style={{ flex: 1, fontSize: '14px', color: '#1a1a12' }}>Display name</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ width: '70px', border: 'none', fontSize: '13px', color: '#888', background: 'transparent', outline: 'none', fontFamily: 'inherit', textAlign: 'right' }} />
+              <button onClick={() => updateProfile({ display_name: name })} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
+            </div>
+          </div>
         </div>
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', overflow: 'hidden' }}>

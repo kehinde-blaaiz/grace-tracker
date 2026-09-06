@@ -102,7 +102,7 @@ export default function Dashboard() {
             <div>
               <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Grow Together, one day at a time.</div>
               <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
-                {getTimeOfDay()},<br />{(profile?.display_name || 'friend').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{FE00}-\u{FEFF}❤♥♡]+/gu, '').trim()}.
+                {getTimeOfDay()},<br />{profile?.display_name || 'friend'}.
               </div>
             </div>
           ) : (

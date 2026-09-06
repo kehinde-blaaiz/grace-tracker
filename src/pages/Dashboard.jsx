@@ -83,13 +83,23 @@ export default function Dashboard() {
 
       {/* HEADER */}
       <div style={{ background: '#fff', padding: '20px 18px 16px', borderBottom: '0.5px solid #e8e6e2' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Your companion for today.</div>
-            <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
-              {getTimeOfDay()},<br />{profile?.display_name || 'friend'}.
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {activeTab === 'today' ? (
+            <div>
+              <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Your companion for today.</div>
+              <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
+                {getTimeOfDay()},<br />{profile?.display_name || 'friend'}.
+              </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12' }}>
+              { activeTab === 'week'     ? 'This week'
+              : activeTab === 'calendar' ? 'Calendar'
+              : activeTab === 'partner'  ? (partner?.display_name || 'Partner')
+              : activeTab === 'profile'  ? 'Profile'
+              : '' }
+            </div>
+          )}
           <button onClick={() => setShowStreakPopup(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f0f0ee', border: '0.5px solid #d8d6d2', borderRadius: '999px', padding: '5px 12px', cursor: 'pointer' }}>
             <i className="ti ti-plant" style={{ fontSize: '14px', color: '#1a3a0a' }} aria-hidden="true" />
             <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a12' }}>

@@ -767,6 +767,7 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
         </div>
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', overflow: 'hidden' }}>
+          <PartnerCodeRow profile={profile} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>
             <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: '#f5f4f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className="ti ti-chart-bar" style={{ fontSize: '15px', color: '#555' }} aria-hidden="true" />
@@ -787,6 +788,69 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
           <i className="ti ti-logout" style={{ fontSize: '16px' }} aria-hidden="true" /> Sign out
         </button>
       </div>
+    </div>
+  )
+}
+
+function PartnerCodeRow({ profile }) {
+  const { generateInviteCode } = useAuth()
+  const [code, setCode] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!profile?.id) return
+    import('../lib/supabase').then(({ supabase }) => {
+      supabase.from('invite_codes').select('code').eq('created_by', profile.id).eq('used', false).order('created_at', { ascending: false }).limit(1).single()
+        .then(({ data }) => { setCode(data?.code || null); setLoading(false) })
+    })
+  }, [profile?.id])
+
+  const handleGenerate = async () => {
+    setLoading(true)
+    const newCode = await generateInviteCode()
+    setCode(newCode)
+    setLoading(false)
+  }
+
+  const handleCopy = () => {
+    if (!code) return
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div style={{ padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <i className="ti ti-link" style={{ fontSize: '15px', color: '#1a3a0a' }} aria-hidden="true" />
+        </div>
+        <span style={{ flex: 1, fontSize: '14px', color: '#1a1a12' }}>
+          {profile?.partner_id ? 'Linked with partner' : 'Invite code'}
+        </span>
+        {loading ? (
+          <span style={{ fontSize: '12px', color: '#aaa' }}>…</span>
+        ) : code ? (
+          <button onClick={handleCopy} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: copied ? '#EAF3DE' : '#f5f4f1', border: `0.5px solid ${copied ? '#97C459' : '#e8e6e2'}`, borderRadius: '8px', padding: '4px 10px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '13px', color: copied ? '#27500A' : '#1a1a12', letterSpacing: '2px', fontWeight: '600' }}>
+            {copied ? <><i className="ti ti-check" style={{ fontSize: '12px' }} aria-hidden="true" /> Copied</> : code}
+          </button>
+        ) : (
+          <button onClick={handleGenerate} style={{ fontSize: '12px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Generate
+          </button>
+        )}
+      </div>
+      {!profile?.partner_id && code && (
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '6px', marginLeft: '42px' }}>
+          Share this code with your partner so they can link with you
+        </div>
+      )}
+      {profile?.partner_id && (
+        <div style={{ fontSize: '11px', color: '#3B6D11', marginTop: '6px', marginLeft: '42px' }}>
+          ✓ You're linked with your accountability partner
+        </div>
+      )}
     </div>
   )
 }

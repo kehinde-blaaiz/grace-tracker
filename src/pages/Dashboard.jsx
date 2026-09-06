@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('today')
   const [currentWeek, setCurrentWeek] = useState(1)
   const [toast, setToast] = useState('')
+  const [snack, setSnack] = useState({ msg: '', visible: false })
   const [showStreakPopup, setShowStreakPopup] = useState(false)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -29,6 +30,7 @@ export default function Dashboard() {
   }, [])
 
   const celebrate = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
+  const showSnack = (msg) => { setSnack({ msg, visible: true }); setTimeout(() => setSnack({ msg: '', visible: false }), 3000) }
   const todayKey = new Date().toISOString().split('T')[0]
   const todayDOW = new Date().getDay()
   const isSat = todayDOW === 6
@@ -80,6 +82,12 @@ export default function Dashboard() {
           {toast}
         </div>
       )}
+      {snack.visible && (
+        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', background: '#1a1a12', color: '#fff', padding: '10px 20px', borderRadius: '12px', fontSize: '13px', zIndex: 100, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+          <i className="ti ti-check" style={{ fontSize: '14px', color: '#97C459' }} aria-hidden="true" />
+          {snack.msg}
+        </div>
+      )}
 
       {/* HEADER */}
       <div style={{ background: '#fff', padding: '20px 18px 16px', borderBottom: '0.5px solid #e8e6e2' }}>
@@ -121,10 +129,10 @@ export default function Dashboard() {
           <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} />
         )}
         {activeTab === 'partner' && (
-          <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} />
+          <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} showSnack={showSnack} />
         )}
         {activeTab === 'profile' && (
-          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} />
+          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} showSnack={showSnack} />
         )}
       </div>
 
@@ -184,24 +192,20 @@ export default function Dashboard() {
               onChange={async (e) => {
                 const file = e.target.files[0]
                 if (!file) return
-                const reader = new FileReader()
-                reader.onload = async (ev) => {
-                  await updateProfile({ avatar_url: ev.target.result })
-                  setShowAvatarPicker(false)
-                }
-                reader.readAsDataURL(file)
+                const compressed = await compressImage(file)
+                await updateProfile({ avatar_url: compressed })
+                setShowAvatarPicker(false)
+                showSnack('Profile photo updated')
               }}
             />
             <input type="file" accept="image/*" capture="user" id="avatar-camera" style={{ display: 'none' }}
               onChange={async (e) => {
                 const file = e.target.files[0]
                 if (!file) return
-                const reader = new FileReader()
-                reader.onload = async (ev) => {
-                  await updateProfile({ avatar_url: ev.target.result })
-                  setShowAvatarPicker(false)
-                }
-                reader.readAsDataURL(file)
+                const compressed = await compressImage(file)
+                await updateProfile({ avatar_url: compressed })
+                setShowAvatarPicker(false)
+                showSnack('Profile photo updated')
               }}
             />
 
@@ -210,7 +214,7 @@ export default function Dashboard() {
                 { label: 'Take photo',    icon: 'ti-camera',     bg: '#EAF3DE', color: '#1a3a0a', action: () => document.getElementById('avatar-camera').click() },
                 { label: 'Upload image',  icon: 'ti-photo',      bg: '#E6F1FB', color: '#185FA5', action: () => document.getElementById('avatar-upload').click() },
                 { label: 'Choose emoji',  icon: 'ti-mood-smile', bg: '#FAEEDA', color: '#BA7517', action: () => { setShowAvatarPicker(false); setShowEmojiPicker(true) } },
-                { label: 'Remove photo',  icon: 'ti-trash',      bg: '#FCEBEB', color: '#A32D2D', action: async () => { await updateProfile({ avatar_url: null }); setShowAvatarPicker(false) }, danger: true },
+                { label: 'Remove photo',  icon: 'ti-trash',      bg: '#FCEBEB', color: '#A32D2D', action: async () => { await updateProfile({ avatar_url: null }); setShowAvatarPicker(false); showSnack('Photo removed') }, danger: true },
               ].map(opt => (
                 <button key={opt.label} onClick={opt.action} style={{ border: `0.5px solid ${opt.danger ? '#F09595' : '#e8e6e2'}`, borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', cursor: 'pointer' }}>
                   <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: opt.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -233,7 +237,7 @@ export default function Dashboard() {
             <div style={{ fontSize: '16px', fontWeight: '600', color: '#1a1a12', marginBottom: '16px' }}>Choose an emoji</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
               {['😊','🙏','✝️','⭐','🌱','🕊️','👑','🛡️','🌟','⚓','🔥','💎','🌿','🍃','🦋','📖','🌸','🏆'].map(emoji => (
-                <button key={emoji} onClick={async () => { await updateProfile({ avatar_url: `emoji:${emoji}` }); setShowEmojiPicker(false) }} style={{ fontSize: '24px', padding: '8px', border: '0.5px solid #e8e6e2', borderRadius: '10px', background: 'none', cursor: 'pointer' }}>
+                <button key={emoji} onClick={async () => { await updateProfile({ avatar_url: `emoji:${emoji}` }); setShowEmojiPicker(false); showSnack('Avatar updated') }} style={{ fontSize: '24px', padding: '8px', border: '0.5px solid #e8e6e2', borderRadius: '10px', background: 'none', cursor: 'pointer' }}>
                   {emoji}
                 </button>
               ))}
@@ -564,7 +568,7 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
 }
 
 // ── Partner tab ────────────────────────────────────────────────────────────────
-function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId }) {
+function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack }) {
   const [viewWeek, setViewWeek] = useState(currentWeek)
 
   if (!partner) return (
@@ -675,7 +679,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
                 </div>
               ))}
             </div>
-            <NudgeButton fromUserId={currentUserId} fromName={myProfile?.display_name || 'your partner'} toUserId={partner.id} toName={partner.display_name} />
+            <NudgeButton fromUserId={currentUserId} fromName={myProfile?.display_name || 'your partner'} toUserId={partner.id} toName={partner.display_name} onSent={() => showSnack(`Nudge sent to ${partner.display_name} 🙏`)} />
           </>
         )}
       </div>
@@ -684,7 +688,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
 }
 
 // ── Profile tab ────────────────────────────────────────────────────────────────
-function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay }) {
+function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay, showSnack }) {
   const [name, setName] = useState(profile?.display_name || '')
   const [offering, setOffering] = useState(profile?.offering_amount || '')
   const streak = myProgress.data.streak.last_active_date ? myProgress.data.streak.current_streak : 0
@@ -717,7 +721,7 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
           <i className="ti ti-chevron-right" style={{ fontSize: '18px', color: '#3B6D11' }} aria-hidden="true" />
         </button>
 
-        <NotificationSettings profile={profile} updateProfile={updateProfile} />
+        <NotificationSettings profile={profile} updateProfile={updateProfile} onSnack={showSnack} />
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', overflow: 'hidden' }}>
           <div style={{ padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>
@@ -751,7 +755,7 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '13px', color: '#BA7517', fontWeight: '600' }}>₦</span>
               <input type="number" value={offering} onChange={e => setOffering(e.target.value)} style={{ width: '70px', border: 'none', fontSize: '13px', color: '#888', background: 'transparent', outline: 'none', fontFamily: 'inherit', textAlign: 'right' }} />
-              <button onClick={() => updateProfile({ offering_amount: Number(offering) })} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
+              <button onClick={() => { updateProfile({ offering_amount: Number(offering) }); showSnack('Offering amount saved') }} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px' }}>
@@ -761,7 +765,7 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
             <span style={{ flex: 1, fontSize: '14px', color: '#1a1a12' }}>Display name</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ width: '70px', border: 'none', fontSize: '13px', color: '#888', background: 'transparent', outline: 'none', fontFamily: 'inherit', textAlign: 'right' }} />
-              <button onClick={() => updateProfile({ display_name: name })} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
+              <button onClick={() => { updateProfile({ display_name: name }); showSnack('Display name saved') }} style={{ fontSize: '11px', color: '#1a3a0a', background: 'none', border: '0.5px solid #1a3a0a', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
             </div>
           </div>
         </div>
@@ -853,6 +857,27 @@ function PartnerCodeRow({ profile }) {
       )}
     </div>
   )
+}
+
+function compressImage(file) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const size = 200
+      canvas.width = size
+      canvas.height = size
+      const min = Math.min(img.width, img.height)
+      const sx = (img.width - min) / 2
+      const sy = (img.height - min) / 2
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', 0.7))
+    }
+    img.src = url
+  })
 }
 
 function getTimeOfDay() {

@@ -132,7 +132,7 @@ export default function Dashboard() {
           <WeekTab weekData={weekData} currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} myProgress={myProgress} celebrate={celebrate} />
         )}
         {activeTab === 'calendar' && (
-          <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} />
+          <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} profile={profile} />
         )}
         {activeTab === 'partner' && (
           <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} showSnack={showSnack} />
@@ -559,7 +559,7 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
 }
 
 // ── Calendar tab ───────────────────────────────────────────────────────────────
-function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
+function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }) {
   const { year, month } = calMonth
   const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const firstDay = new Date(year, month, 1).getDay()
@@ -574,20 +574,32 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
     todayCheck.setHours(0, 0, 0, 0)
     date.setHours(0, 0, 0, 0)
     const dow = date.getDay()
-    if (dow === 0) {
-      // Sunday — check if prayer was done
-      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-      const p = myProgress.data.prayers[dateStr]
-      return (p?.morning || p?.night) ? 'sunday_done' : 'sunday'
-    }
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     if (dow === 6) return 'saturday'
     if (date > todayCheck) return 'future'
+
+    const p = myProgress.data.prayers[dateStr] || {}
+    const prayerDone = p.morning || p.afternoon || p.night
+    const prayerAllDone = p.morning || p.night // at least one main slot
+
+    if (dow === 0) {
+      // Sunday — complete if prayer done + offering given (if set), in-progress if prayer started
+      const o = myProgress.data.offerings[dateStr]
+      const offeringDone = !profile?.offering_amount || o?.given
+      if (prayerAllDone && offeringDone) return 'complete'
+      if (prayerDone) return 'inprogress'
+      return 'missed'
+    }
+
+    // Weekday
     const diffDays = Math.floor((date - startDate) / 86400000)
     if (diffDays < 0) return 'future'
     const weekN = Math.floor(diffDays / 7) + 1
-    const dayIdx = dow - 1
-    const key = `w${weekN}_d${dayIdx}`
-    return myProgress.data.readings[key]?.done ? 'complete' : 'missed'
+    const key = `w${weekN}_d${dow - 1}`
+    const readingDone = myProgress.data.readings[key]?.done
+    if (readingDone && prayerAllDone) return 'complete'
+    if (readingDone || prayerDone) return 'inprogress'
+    return 'missed'
   }
 
   const totalDays = Array.from({ length: daysInMonth }, (_, i) => i + 1)
@@ -617,12 +629,11 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
             const status = getDayStatus(d)
             const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
             const styles = {
-              complete:     { bg: '#1a3a0a', color: '#fff' },
-              saturday:     { bg: '#FAEEDA', color: '#854F0B', fontSize: '9px' },
-              sunday_done:  { bg: '#EAF3DE', color: '#27500A' },
-              sunday:       { bg: 'transparent', color: '#ddd' },
-              missed:       { bg: '#f5f4f1', color: '#bbb' },
-              future:       { bg: '#f5f4f1', color: '#888' },
+              complete:   { bg: '#1a3a0a', color: '#fff' },
+              inprogress: { bg: '#EAF3DE', color: '#27500A' },
+              saturday:   { bg: '#FAEEDA', color: '#854F0B', fontSize: '9px' },
+              missed:     { bg: '#f5f4f1', color: '#bbb' },
+              future:     { bg: '#f5f4f1', color: '#888' },
             }[status] || { bg: '#f5f4f1', color: '#888' }
             return (
               <div key={d} style={{ aspectRatio: '1', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: styles.fontSize || '12px', fontWeight: isToday ? '700' : '400', background: styles.bg, color: styles.color, border: isToday ? '2px solid #BA7517' : '0.5px solid transparent' }}>
@@ -632,7 +643,7 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
           })}
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px', paddingTop: '10px', borderTop: '0.5px solid #f0ede6' }}>
-          {[['#1a3a0a', '#fff', 'Reading done'], ['#EAF3DE', '#27500A', 'Prayer done'], ['#FAEEDA', '#854F0B', 'Saturday']].map(([bg, color, lbl]) => (
+          {[['#1a3a0a', '#fff', 'Complete'], ['#EAF3DE', '#27500A', 'In progress'], ['#FAEEDA', '#854F0B', 'Saturday']].map(([bg, color, lbl]) => (
             <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#888' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: bg, border: '0.5px solid #e8e6e2' }} />{lbl}
             </div>

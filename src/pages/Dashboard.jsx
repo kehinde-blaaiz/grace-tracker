@@ -95,7 +95,7 @@ export default function Dashboard() {
             <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12' }}>
               { activeTab === 'week'     ? 'This week'
               : activeTab === 'calendar' ? 'Calendar'
-              : activeTab === 'partner'  ? (partner?.display_name || 'Partner')
+              : activeTab === 'partner'  ? 'Buddy'
               : activeTab === 'profile'  ? 'Profile'
               : '' }
             </div>

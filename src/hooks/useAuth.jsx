@@ -7,7 +7,7 @@ const AVATAR_COLORS = ['#2D5016', '#085041', '#185FA5', '#854F0B', '#534AB7']
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
-  const [allProfiles, setAllProfiles] = useState([])
+  const [partner, setPartner] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -19,27 +19,46 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setSession(session)
       if (session) loadProfile(session.user.id)
-      else { setProfile(null); setLoading(false) }
+      else { setProfile(null); setPartner(null); setLoading(false) }
     })
     return () => subscription.unsubscribe()
   }, [])
 
   const loadProfile = async (userId) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
     setProfile(data)
-    const { data: all } = await supabase.from('profiles').select('*')
-    if (all) setAllProfiles(all)
+    if (data?.partner_id) loadPartner(data.partner_id)
+    else setLoading(false)
+  }
+
+  const loadPartner = async (partnerId) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', partnerId)
+      .single()
+    setPartner(data || null)
     setLoading(false)
   }
 
   const signUp = async (email, password, displayName) => {
     const color = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]
-    const { error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } })
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { display_name: displayName } }
+    })
     if (!error) {
       setTimeout(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          await supabase.from('profiles').update({ display_name: displayName, avatar_color: color }).eq('id', user.id)
+          await supabase.from('profiles').update({
+            display_name: displayName,
+            avatar_color: color,
+          }).eq('id', user.id)
           loadProfile(user.id)
         }
       }, 1000)
@@ -56,14 +75,95 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!session) return
-    const { data } = await supabase.from('profiles').update(updates).eq('id', session.user.id).select().single()
-    if (data) setProfile(data)
+    const { data } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', session.user.id)
+      .select()
+      .single()
+    if (data) {
+      setProfile(data)
+      if (data.partner_id && data.partner_id !== profile?.partner_id) {
+        loadPartner(data.partner_id)
+      }
+    }
   }
 
-  const getPartner = () => profile ? allProfiles.find(p => p.id !== profile.id) || null : null
+  // Generate a 6-character invite code and store it
+  const generateInviteCode = async () => {
+    if (!session) return null
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
+    const { error } = await supabase.from('invite_codes').insert({
+      code,
+      created_by: session.user.id,
+    })
+    if (error) return null
+    return code
+  }
+
+  // Enter a partner's invite code to link up
+  const enterInviteCode = async (code) => {
+    if (!session) return { error: 'Not signed in' }
+
+    const trimmed = code.trim().toUpperCase()
+
+    // Find the code
+    const { data: invite, error: fetchError } = await supabase
+      .from('invite_codes')
+      .select('*')
+      .eq('code', trimmed)
+      .eq('used', false)
+      .single()
+
+    if (fetchError || !invite) return { error: 'Code not found or already used.' }
+    if (invite.created_by === session.user.id) return { error: "That's your own code — share it with your partner." }
+
+    const now = new Date()
+    if (new Date(invite.expires_at) < now) return { error: 'This code has expired. Ask your partner to generate a new one.' }
+
+    // Link both profiles to each other
+    const partnerId = invite.created_by
+    const myId = session.user.id
+
+    const [r1, r2] = await Promise.all([
+      supabase.from('profiles').update({ partner_id: partnerId }).eq('id', myId),
+      supabase.from('profiles').update({ partner_id: myId }).eq('id', partnerId),
+    ])
+
+    if (r1.error || r2.error) return { error: 'Something went wrong. Please try again.' }
+
+    // Mark code as used
+    await supabase.from('invite_codes').update({ used: true }).eq('code', trimmed)
+
+    // Reload profile and partner
+    await loadProfile(myId)
+    return { success: true }
+  }
+
+  // Unlink from partner
+  const unlinkPartner = async () => {
+    if (!session || !profile?.partner_id) return
+    await Promise.all([
+      supabase.from('profiles').update({ partner_id: null }).eq('id', session.user.id),
+      supabase.from('profiles').update({ partner_id: null }).eq('id', profile.partner_id),
+    ])
+    setPartner(null)
+    setProfile(prev => ({ ...prev, partner_id: null }))
+  }
+
+  const getPartner = () => partner
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, allProfiles, getPartner, signUp, signIn, signOut, updateProfile, currentUserId: session?.user?.id || null }}>
+    <AuthContext.Provider value={{
+      session, profile, loading,
+      partner, getPartner,
+      signUp, signIn, signOut,
+      updateProfile,
+      generateInviteCode,
+      enterInviteCode,
+      unlinkPartner,
+      currentUserId: session?.user?.id || null,
+    }}>
       {children}
     </AuthContext.Provider>
   )

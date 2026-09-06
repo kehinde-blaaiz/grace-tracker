@@ -98,11 +98,10 @@ export function useProgress(userId) {
       { onConflict: 'user_id,log_date' }
     )
     if (error) console.error('markPrayer error:', error)
-    // On weekends, prayer completion counts toward streak
+    // On weekends prayer counts toward streak — fire whenever any slot is marked true
     const dow = new Date().getDay()
-    if (dow === 0 || dow === 6) {
-      const slots = Object.values(updated).filter(Boolean)
-      if (slots.length >= 1) updateStreak()
+    if ((dow === 0 || dow === 6) && value === true) {
+      updateStreak()
     }
   }
 
@@ -115,19 +114,21 @@ export function useProgress(userId) {
     if (error) console.error('saveOffering error:', error)
   }
 
-  const updateStreak = async () => {
+  const updateStreak = () => {
     const today = new Date().toISOString().split('T')[0]
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
     setData(prev => {
       const { last_active_date, current_streak, longest_streak } = prev.streak
-      let newCurrent = current_streak
-      if (last_active_date === yesterday) newCurrent = current_streak + 1
-      else if (last_active_date !== today) newCurrent = 1
-      const newLongest = Math.max(longest_streak, newCurrent)
+      // Already counted today — don't double-increment
+      if (last_active_date === today) return prev
+      let newCurrent = 1
+      if (last_active_date === yesterday) newCurrent = (current_streak || 0) + 1
+      const newLongest = Math.max(longest_streak || 0, newCurrent)
+      // Save to Supabase
       supabase.from('streaks').upsert(
         { user_id: userId, current_streak: newCurrent, longest_streak: newLongest, last_active_date: today, updated_at: new Date().toISOString() },
         { onConflict: 'user_id' }
-      )
+      ).then(({ error }) => { if (error) console.error('streak error:', error) })
       return { ...prev, streak: { current_streak: newCurrent, longest_streak: newLongest, last_active_date: today } }
     })
   }

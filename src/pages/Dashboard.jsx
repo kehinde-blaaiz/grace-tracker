@@ -22,22 +22,16 @@ export default function Dashboard() {
   const [calMonth, setCalMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }))
 
   useEffect(() => {
-    try {
-      let startDate = localStorage.getItem('grace_start_date')
-      if (!startDate) {
-        // Anchor to Monday of the current week
-        const now = new Date()
-        const dow = now.getDay()
-        const monday = new Date(now)
-        monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1))
-        startDate = monday.toISOString().split('T')[0]
-        localStorage.setItem('grace_start_date', startDate)
-      }
-      const start = new Date(startDate)
-      const now = new Date()
-      const diff = Math.floor((now - start) / 86400000)
-      setCurrentWeek(Math.max(1, Math.min(Math.floor(diff / 7) + 1, READING_PLAN.length)))
-    } catch { setCurrentWeek(1) }
+    // Anchor to Monday Sept 1 2026 — week 1 of the reading plan
+    // This is fixed so all users share the same week number
+    const ANCHOR_DATE = new Date('2026-09-01T00:00:00')
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const diffDays = Math.floor((now - ANCHOR_DATE) / 86400000)
+    const week = Math.max(1, Math.min(Math.floor(diffDays / 7) + 1, READING_PLAN.length))
+    setCurrentWeek(week)
+    // Store for calendar use
+    localStorage.setItem('grace_start_date', '2026-09-01')
   }, [])
 
   const celebrate = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
@@ -76,8 +70,8 @@ export default function Dashboard() {
 
   if (myProgress.loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#f5f4f1' }}>
-      <div style={{ width: 60, height: 60, borderRadius: 14, background: '#0d0d0a', overflow: 'hidden' }}>
-        <img src="/grace-logo.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ width: 60, height: 60, borderRadius: 14, background: '#0d0d0a', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img src="/grace-logo.png" alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
       </div>
       <div style={{ fontSize: '14px', color: '#888' }}>Loading…</div>
     </div>
@@ -105,7 +99,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {activeTab === 'today' ? (
             <div>
-              <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Your companion for today.</div>
+              <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Grow Together, one day at a time.</div>
               <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
                 {getTimeOfDay()},<br />{profile?.display_name || 'friend'}.
               </div>
@@ -550,9 +544,7 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const startDate = localStorage.getItem('grace_start_date')
-    ? new Date(localStorage.getItem('grace_start_date'))
-    : new Date()
+  const startDate = new Date('2026-09-01T00:00:00')
 
   const getDayStatus = (d) => {
     const date = new Date(year, month, d)

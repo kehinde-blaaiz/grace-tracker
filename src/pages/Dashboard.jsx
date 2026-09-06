@@ -102,7 +102,7 @@ export default function Dashboard() {
             <div>
               <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Grow Together, one day at a time.</div>
               <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
-                {getTimeOfDay()},<br />{(profile?.display_name || 'friend').replace(/\s*[\u{1F300}-\u{1F9FF}]/gu, '').trim()}.
+                {getTimeOfDay()},<br />{(profile?.display_name || 'friend').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{FE00}-\u{FEFF}❤♥♡]+/gu, '').trim()}.
               </div>
             </div>
           ) : (
@@ -632,7 +632,7 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
           })}
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px', paddingTop: '10px', borderTop: '0.5px solid #f0ede6' }}>
-          {[['#1a3a0a', 'Complete'], ['#FAEEDA', 'Saturday'], ['#f5f4f1', 'Upcoming']].map(([bg, lbl]) => (
+          {[['#1a3a0a', '#fff', 'Reading done'], ['#EAF3DE', '#27500A', 'Prayer done'], ['#FAEEDA', '#854F0B', 'Saturday']].map(([bg, color, lbl]) => (
             <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#888' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: bg, border: '0.5px solid #e8e6e2' }} />{lbl}
             </div>

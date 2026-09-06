@@ -669,12 +669,78 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }
 // ── Partner tab ────────────────────────────────────────────────────────────────
 function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack }) {
   const [viewWeek, setViewWeek] = useState(currentWeek)
+  const { generateInviteCode, enterInviteCode } = useAuth()
+  const [myCode, setMyCode] = useState(null)
+  const [enteredCode, setEnteredCode] = useState('')
+  const [linking, setLinking] = useState(false)
+  const [linkError, setLinkError] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [loadingCode, setLoadingCode] = useState(true)
+
+  useEffect(() => {
+    if (partner || !myProfile?.id) { setLoadingCode(false); return }
+    import('../lib/supabase').then(({ supabase }) => {
+      supabase.from('invite_codes').select('code').eq('created_by', myProfile.id).eq('used', false)
+        .order('created_at', { ascending: false }).limit(1).single()
+        .then(({ data }) => { setMyCode(data?.code || null); setLoadingCode(false) })
+    })
+  }, [partner, myProfile?.id])
 
   if (!partner) return (
-    <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: '40px', marginBottom: '12px' }}>♡</div>
-      <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12', marginBottom: '8px' }}>No partner yet</div>
-      <div style={{ fontSize: '14px', color: '#888', lineHeight: '1.6' }}>Once your friend creates an account, they'll appear here automatically.</div>
+    <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
+        <div style={{ fontSize: '32px', marginBottom: '8px' }}>♡</div>
+        <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Link your accountability partner</div>
+        <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.6' }}>Share your code or enter theirs to get started.</div>
+      </div>
+
+      {/* Generate code card */}
+      <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', padding: '16px' }}>
+        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Share your code</div>
+        <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>Send this to your partner so they can link with you.</div>
+        {loadingCode ? (
+          <div style={{ fontSize: '13px', color: '#aaa' }}>Loading…</div>
+        ) : myCode ? (
+          <>
+            <div style={{ background: '#f5f4f1', borderRadius: '10px', padding: '12px', textAlign: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#1a1a12', letterSpacing: '6px', fontFamily: 'monospace' }}>{myCode}</div>
+              <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>Valid 48 hours</div>
+            </div>
+            <button onClick={() => { navigator.clipboard.writeText(myCode); setCopied(true); setTimeout(() => setCopied(false), 2000) }} style={{ width: '100%', padding: '10px', background: copied ? '#EAF3DE' : 'transparent', border: `0.5px solid ${copied ? '#97C459' : '#e8e6e2'}`, borderRadius: '10px', fontSize: '13px', color: copied ? '#27500A' : '#555', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <i className={`ti ${copied ? 'ti-check' : 'ti-copy'}`} style={{ fontSize: '14px' }} aria-hidden="true" />
+              {copied ? 'Copied!' : 'Copy code'}
+            </button>
+          </>
+        ) : (
+          <button onClick={async () => { setLoadingCode(true); const c = await generateInviteCode(); setMyCode(c); setLoadingCode(false) }} style={{ width: '100%', padding: '11px', background: '#1a3a0a', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Generate my code
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ flex: 1, height: '0.5px', background: '#e8e6e2' }} />
+        <span style={{ fontSize: '12px', color: '#aaa' }}>or</span>
+        <div style={{ flex: 1, height: '0.5px', background: '#e8e6e2' }} />
+      </div>
+
+      {/* Enter partner code */}
+      <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', padding: '16px' }}>
+        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Enter your partner's code</div>
+        <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>Ask your partner for their 6-character code.</div>
+        <input type="text" value={enteredCode} onChange={e => { setEnteredCode(e.target.value.toUpperCase()); setLinkError('') }} placeholder="e.g. A3BF9K" maxLength={6}
+          style={{ width: '100%', padding: '12px', border: `0.5px solid ${linkError ? '#F09595' : '#e8e6e2'}`, borderRadius: '10px', fontSize: '18px', fontFamily: 'monospace', letterSpacing: '4px', textAlign: 'center', outline: 'none', background: '#f5f4f1', color: '#1a1a12', marginBottom: '8px' }} />
+        {linkError && <div style={{ fontSize: '12px', color: '#A32D2D', marginBottom: '8px', textAlign: 'center' }}>{linkError}</div>}
+        <button onClick={async () => { if (!enteredCode.trim()) return; setLinking(true); setLinkError(''); const r = await enterInviteCode(enteredCode); if (r.error) { setLinkError(r.error); setLinking(false) } else { showSnack('Partner linked! 🎉') } }}
+          disabled={enteredCode.trim().length !== 6 || linking}
+          style={{ width: '100%', padding: '11px', background: enteredCode.trim().length === 6 ? '#1a3a0a' : '#e8e6e2', color: enteredCode.trim().length === 6 ? '#fff' : '#aaa', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '500', cursor: enteredCode.trim().length === 6 ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+          {linking ? 'Linking…' : 'Link with partner'}
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center', fontSize: '12px', color: '#aaa', fontStyle: 'italic', lineHeight: '1.6', padding: '8px 0' }}>
+        "As iron sharpens iron, so one person sharpens another." — Proverbs 27:17
+      </div>
     </div>
   )
 
@@ -683,6 +749,43 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   const lastActive = partnerProgress.data.streak.last_active_date
   const streak = lastActive ? partnerProgress.data.streak.current_streak : 0
   const streakTitle = getStreakTitle(streak)
+
+  // Online status from last_seen
+  const getOnlineStatus = () => {
+    if (!partner.last_seen) return { label: 'Never seen', color: '#bbb', dot: '#ccc' }
+    const diff = Date.now() - new Date(partner.last_seen).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 5) return { label: 'Online now', color: '#27500A', dot: '#2D5016', bg: '#EAF3DE' }
+    if (mins < 60) return { label: `${mins}m ago`, color: '#888', dot: '#bbb', bg: null }
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return { label: `${hours}h ago`, color: '#888', dot: '#bbb', bg: null }
+    const days = Math.floor(hours / 24)
+    return { label: `${days}d ago`, color: '#aaa', dot: '#ddd', bg: null }
+  }
+  const onlineStatus = getOnlineStatus()
+
+  // Refresh partner's last_seen every time Buddy tab is viewed
+  useEffect(() => {
+    if (!partner?.id) return
+    import('../lib/supabase').then(({ supabase }) => {
+      supabase.from('profiles').select('last_seen').eq('id', partner.id).single()
+        .then(({ data }) => { if (data?.last_seen) partner.last_seen = data.last_seen })
+    })
+  }, [])
+
+  // Online / last seen
+  const getPresence = (lastSeen) => {
+    if (!lastSeen) return { label: 'Never seen', color: '#bbb', dot: '#bbb' }
+    const diffMs = Date.now() - new Date(lastSeen).getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 5) return { label: 'Online now', color: '#27500A', dot: '#4CAF50' }
+    if (diffMins < 60) return { label: `Last seen ${diffMins}m ago`, color: '#888', dot: '#bbb' }
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return { label: `Last seen ${diffHours}h ago`, color: '#888', dot: '#bbb' }
+    const diffDays = Math.floor(diffHours / 24)
+    return { label: `Last seen ${diffDays}d ago`, color: '#bbb', dot: '#bbb' }
+  }
+  const presence = getPresence(partner.last_seen)
   const weekData = READING_PLAN[viewWeek - 1]
   const isCurrentWeek = viewWeek === currentWeek
   const todayKey = new Date().toISOString().split('T')[0]
@@ -707,12 +810,19 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: '#fff', padding: '20px 18px 16px', borderBottom: '0.5px solid #e8e6e2' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <PartnerAvatar />
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12' }}>{partner.display_name}</div>
-            <div style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>{streakTitle.emoji} {streakTitle.title} · {streak} day streak</div>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <PartnerAvatar />
+            <div style={{ position: 'absolute', bottom: 1, right: 1, width: 11, height: 11, borderRadius: '50%', background: onlineStatus.dot, border: '2px solid #fff' }} />
           </div>
-          <button onClick={() => partnerProgress.refetch()} style={{ marginLeft: 'auto', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '14px', color: '#888' }}>↺</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12' }}>{partner.display_name}</div>
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '1px' }}>{streakTitle.emoji} {streakTitle.title} · {streak} day streak</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px', padding: '2px 8px', background: onlineStatus.bg || '#f5f4f1', borderRadius: '999px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: onlineStatus.dot, flexShrink: 0 }} />
+              <span style={{ fontSize: '11px', color: onlineStatus.color, fontWeight: '500' }}>{onlineStatus.label}</span>
+            </div>
+          </div>
+          <button onClick={() => partnerProgress.refetch()} style={{ background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '14px', color: '#888', flexShrink: 0 }}>↺</button>
         </div>
       </div>
 

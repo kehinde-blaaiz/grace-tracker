@@ -33,26 +33,14 @@ function AppInner() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#f5f4f1', fontFamily: '-apple-system, sans-serif' }}>
-      <div style={{ width: 60, height: 60, borderRadius: 14, background: '#0d0d0a', overflow: 'hidden' }}>
-        <img src="/grace-logo.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ width: 60, height: 60, borderRadius: 14, background: '#0d0d0a', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <img src="/grace-logo.png" alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
       </div>
       <div style={{ fontSize: '14px', color: '#888' }}>Loading…</div>
     </div>
   )
 
   if (!session) return <LoginPage />
-
-  // No partner yet AND hasn't skipped — show linking screen
-  if (!profile?.partner_id && !skippedLinking) {
-    return (
-      <LinkPartnerPage
-        onSkip={() => {
-          localStorage.setItem('grace_skipped_linking', 'true')
-          setSkippedLinking(true)
-        }}
-      />
-    )
-  }
 
   return (
     <>

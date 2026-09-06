@@ -1,0 +1,23 @@
+-- Add this to your Supabase SQL editor (run once)
+-- Table for partner nudge notifications
+
+create table if not exists public.nudges (
+  id uuid primary key default gen_random_uuid(),
+  from_user_id uuid references public.profiles on delete cascade not null,
+  to_user_id uuid references public.profiles on delete cascade not null,
+  message text not null default '',
+  sent_at timestamptz not null default now(),
+  read boolean not null default false
+);
+
+alter table public.nudges enable row level security;
+
+-- Users can insert nudges to others, read nudges sent to them
+create policy "insert_nudge" on public.nudges
+  for insert with check (auth.uid() = from_user_id);
+
+create policy "read_own_nudges" on public.nudges
+  for select using (auth.uid() = to_user_id or auth.uid() = from_user_id);
+
+create policy "update_own_nudges" on public.nudges
+  for update using (auth.uid() = to_user_id);

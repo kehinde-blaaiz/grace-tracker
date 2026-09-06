@@ -47,21 +47,34 @@ export function useProgress(userId) {
 
   const markReading = async (weekNum, dayIndex, done) => {
     const key = `w${weekNum}_d${dayIndex}`
-    setData(prev => ({ ...prev, readings: { ...prev.readings, [key]: { ...prev.readings[key], done } } }))
-    await supabase.from('reading_progress').upsert({ user_id: userId, week_num: weekNum, day_index: dayIndex, done, marked_at: new Date().toISOString() }, { onConflict: 'user_id,week_num,day_index' })
-    if (done) updateStreak()
+    // Optimistic update immediately
+    setData(prev => ({ ...prev, readings: { ...prev.readings, [key]: { ...(prev.readings[key] || {}), week_num: weekNum, day_index: dayIndex, done } } }))
+    const { error } = await supabase.from('reading_progress').upsert(
+      { user_id: userId, week_num: weekNum, day_index: dayIndex, done, marked_at: new Date().toISOString() },
+      { onConflict: 'user_id,week_num,day_index' }
+    )
+    if (error) console.error('markReading error:', error)
+    else if (done) updateStreak()
   }
 
   const saveVerse = async (weekNum, dayIndex, text) => {
     const key = `w${weekNum}_d${dayIndex}`
     setData(prev => ({ ...prev, verses: { ...prev.verses, [key]: text } }))
-    await supabase.from('verse_notes').upsert({ user_id: userId, week_num: weekNum, day_index: dayIndex, verse_text: text, updated_at: new Date().toISOString() }, { onConflict: 'user_id,week_num,day_index' })
+    const { error } = await supabase.from('verse_notes').upsert(
+      { user_id: userId, week_num: weekNum, day_index: dayIndex, verse_text: text, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,week_num,day_index' }
+    )
+    if (error) console.error('saveVerse error:', error)
   }
 
   const saveWeeklyVerse = async (weekNum, text) => {
     const key = `w${weekNum}`
     setData(prev => ({ ...prev, weeklyVerses: { ...prev.weeklyVerses, [key]: text } }))
-    await supabase.from('weekly_verses').upsert({ user_id: userId, week_num: weekNum, verse_text: text, updated_at: new Date().toISOString() }, { onConflict: 'user_id,week_num' })
+    const { error } = await supabase.from('weekly_verses').upsert(
+      { user_id: userId, week_num: weekNum, verse_text: text, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,week_num' }
+    )
+    if (error) console.error('saveWeeklyVerse error:', error)
   }
 
   const markSSLesson = async (weekNum, field, value) => {
@@ -69,31 +82,48 @@ export function useProgress(userId) {
     const existing = data.ssProgress[key] || {}
     const updated = { ...existing, [field]: value }
     setData(prev => ({ ...prev, ssProgress: { ...prev.ssProgress, [key]: updated } }))
-    await supabase.from('ss_progress').upsert({ user_id: userId, week_num: weekNum, lesson_read: updated.lesson_read || false, lesson_reviewed: updated.lesson_reviewed || false, updated_at: new Date().toISOString() }, { onConflict: 'user_id,week_num' })
+    const { error } = await supabase.from('ss_progress').upsert(
+      { user_id: userId, week_num: weekNum, lesson_read: updated.lesson_read || false, lesson_reviewed: updated.lesson_reviewed || false, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,week_num' }
+    )
+    if (error) console.error('markSSLesson error:', error)
   }
 
   const markPrayer = async (date, slot, value) => {
     const existing = data.prayers[date] || {}
     const updated = { ...existing, [slot]: value }
     setData(prev => ({ ...prev, prayers: { ...prev.prayers, [date]: updated } }))
-    await supabase.from('prayer_log').upsert({ user_id: userId, log_date: date, morning: updated.morning || false, afternoon: updated.afternoon || false, night: updated.night || false, updated_at: new Date().toISOString() }, { onConflict: 'user_id,log_date' })
+    const { error } = await supabase.from('prayer_log').upsert(
+      { user_id: userId, log_date: date, morning: updated.morning || false, afternoon: updated.afternoon || false, night: updated.night || false, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,log_date' }
+    )
+    if (error) console.error('markPrayer error:', error)
   }
 
   const saveOffering = async (date, amount, given) => {
     setData(prev => ({ ...prev, offerings: { ...prev.offerings, [date]: { amount, given } } }))
-    await supabase.from('offering_log').upsert({ user_id: userId, log_date: date, amount, given, updated_at: new Date().toISOString() }, { onConflict: 'user_id,log_date' })
+    const { error } = await supabase.from('offering_log').upsert(
+      { user_id: userId, log_date: date, amount, given, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,log_date' }
+    )
+    if (error) console.error('saveOffering error:', error)
   }
 
   const updateStreak = async () => {
     const today = new Date().toISOString().split('T')[0]
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-    const { last_active_date, current_streak, longest_streak } = data.streak
-    let newCurrent = current_streak
-    if (last_active_date === yesterday) newCurrent = current_streak + 1
-    else if (last_active_date !== today) newCurrent = 1
-    const newLongest = Math.max(longest_streak, newCurrent)
-    setData(prev => ({ ...prev, streak: { current_streak: newCurrent, longest_streak: newLongest, last_active_date: today } }))
-    await supabase.from('streaks').upsert({ user_id: userId, current_streak: newCurrent, longest_streak: newLongest, last_active_date: today, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    setData(prev => {
+      const { last_active_date, current_streak, longest_streak } = prev.streak
+      let newCurrent = current_streak
+      if (last_active_date === yesterday) newCurrent = current_streak + 1
+      else if (last_active_date !== today) newCurrent = 1
+      const newLongest = Math.max(longest_streak, newCurrent)
+      supabase.from('streaks').upsert(
+        { user_id: userId, current_streak: newCurrent, longest_streak: newLongest, last_active_date: today, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+      return { ...prev, streak: { current_streak: newCurrent, longest_streak: newLongest, last_active_date: today } }
+    })
   }
 
   return { data, loading, markReading, saveVerse, saveWeeklyVerse, markSSLesson, markPrayer, saveOffering, refetch: fetchAll }

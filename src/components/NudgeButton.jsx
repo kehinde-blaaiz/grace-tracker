@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { nudgePartner } from '../lib/notifications'
 
-export default function NudgeButton({ fromUserId, fromName, toUserId, toName }) {
+export default function NudgeButton({ fromUserId, fromName, toUserId, toName, onSent }) {
   const [state, setState] = useState('idle')
 
   const handleNudge = async () => {
@@ -9,7 +9,10 @@ export default function NudgeButton({ fromUserId, fromName, toUserId, toName }) 
     setState('sending')
     const ok = await nudgePartner(fromUserId, fromName, toUserId)
     setState(ok ? 'sent' : 'error')
-    if (ok) setTimeout(() => setState('idle'), 5000)
+    if (ok) {
+      onSent?.()
+      setTimeout(() => setState('idle'), 5000)
+    }
   }
 
   return (

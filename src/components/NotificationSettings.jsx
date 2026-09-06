@@ -6,7 +6,7 @@ import {
   clearAllScheduled,
 } from '../lib/notifications'
 
-export default function NotificationSettings({ profile, updateProfile }) {
+export default function NotificationSettings({ profile, updateProfile, onSnack }) {
   const [permission, setPermission] = useState(getPermissionStatus())
   const [requesting, setRequesting] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -31,18 +31,18 @@ export default function NotificationSettings({ profile, updateProfile }) {
       setPermission(result)
       setRequesting(false)
       setLocalOn(true)
-      try {
-        await updateProfile({ notifications_enabled: true })
-      } catch {}
+      try { await updateProfile({ notifications_enabled: true }) } catch {}
       if (result === 'granted') {
         scheduleDailyReminders(prayerTimes, profile?.display_name || 'friend')
+        onSnack?.('Reminders turned on')
+      } else {
+        onSnack?.('Allow notifications in browser settings')
       }
     } else {
       setLocalOn(false)
-      try {
-        await updateProfile({ notifications_enabled: false })
-      } catch {}
+      try { await updateProfile({ notifications_enabled: false }) } catch {}
       clearAllScheduled()
+      onSnack?.('Reminders turned off')
     }
   }
 

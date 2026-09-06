@@ -1,41 +1,16 @@
-# Grace & Growth
+# React + Vite
 
-Spiritual accountability app for two friends. Built with React + Vite + Supabase, deployed on Netlify.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## Setup
+Currently, two official plugins are available:
 
-### 1. Supabase
-1. Create a project at supabase.com
-2. Go to **Database > SQL Editor**, paste the contents of `supabase-schema.sql` and run it
-3. Go to **Project Settings > API** and copy your `Project URL` and `anon public` key
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### 2. Environment variables
+## React Compiler
 
-**Local development** — create a `.env` file in the project root:
-```
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
-```
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-**Netlify** — go to Site > Site configuration > Environment variables and add the same two keys.
+## Expanding the Oxlint configuration
 
-### 3. Local development
-```bash
-npm install
-npm run dev
-```
-
-### 4. Deploy
-```bash
-git add .
-git commit -m "your message"
-git push
-```
-Netlify auto-deploys on every push. Build command: `npm run build`. Publish directory: `dist`.
-
-## How it works
-
-- Both users sign up with their own email and password
-- All data is stored in Supabase — syncs across any device
-- The "Friend" tab automatically shows your partner's progress once they sign up
-- Row-level security means each user can only write their own data, but read each other's for the partner view
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.

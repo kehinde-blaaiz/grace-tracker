@@ -9,6 +9,10 @@ import { armScheduledNotifications, checkIncomingNudges } from './lib/notificati
 function AppInner() {
   const { session, loading, currentUserId, profile, getPartner } = useAuth()
   const [incomingNudge, setIncomingNudge] = useState(null)
+  // Track if user explicitly skipped linking — stored in localStorage
+  const [skippedLinking, setSkippedLinking] = useState(
+    () => localStorage.getItem('grace_skipped_linking') === 'true'
+  )
   const partner = getPartner()
 
   useEffect(() => {
@@ -17,13 +21,15 @@ function AppInner() {
     checkIncomingNudges(currentUserId, (nudge) => {
       setIncomingNudge(nudge)
       if (Notification.permission === 'granted') {
-        new Notification("You've been nudged 🙏", {
-          body: nudge.message,
-          icon: '/grace-logo.png',
-        })
+        new Notification("You've been nudged 🙏", { body: nudge.message, icon: '/grace-logo.png' })
       }
     })
   }, [session, currentUserId])
+
+  // When partner links, clear the skipped flag so dashboard updates properly
+  useEffect(() => {
+    if (partner) localStorage.removeItem('grace_skipped_linking')
+  }, [partner])
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#f5f4f1', fontFamily: '-apple-system, sans-serif' }}>
@@ -36,15 +42,22 @@ function AppInner() {
 
   if (!session) return <LoginPage />
 
-  // Signed in but not yet linked to a partner — show linking screen
-  if (!profile?.partner_id) return <LinkPartnerPage />
+  // No partner yet AND hasn't skipped — show linking screen
+  if (!profile?.partner_id && !skippedLinking) {
+    return (
+      <LinkPartnerPage
+        onSkip={() => {
+          localStorage.setItem('grace_skipped_linking', 'true')
+          setSkippedLinking(true)
+        }}
+      />
+    )
+  }
 
   return (
     <>
       <Dashboard />
-      {incomingNudge && (
-        <NudgeToast nudge={incomingNudge} onDismiss={() => setIncomingNudge(null)} />
-      )}
+      {incomingNudge && <NudgeToast nudge={incomingNudge} onDismiss={() => setIncomingNudge(null)} />}
     </>
   )
 }

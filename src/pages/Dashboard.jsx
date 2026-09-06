@@ -856,8 +856,25 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
             <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#FAEEDA', border: '0.5px solid #EF9F27', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#854F0B' }}>SS</div>
             <span style={{ fontSize: '9px', color: '#888' }}>Sat</span>
           </div>
+          {(() => {
+            // Find Sunday of this week and check partner's prayer
+            const anchor = new Date('2026-09-01')
+            const sundayDate = new Date(anchor)
+            sundayDate.setDate(anchor.getDate() + (viewWeek - 1) * 7 + 6)
+            const sundayKey = sundayDate.toISOString().split('T')[0]
+            const sp = partnerProgress.data.prayers[sundayKey] || {}
+            const sundayPrayed = sp.morning || sp.night
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: sundayPrayed ? '#EAF3DE' : '#f5f4f1', border: `0.5px solid ${sundayPrayed ? '#97C459' : '#e8e6e2'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: sundayPrayed ? '#27500A' : '#888' }}>
+                  {sundayPrayed ? <i className="ti ti-check" style={{ fontSize: '12px' }} aria-hidden="true" /> : '✝'}
+                </div>
+                <span style={{ fontSize: '9px', color: '#888' }}>Sun</span>
+              </div>
+            )
+          })()}
         </div>
-        <div style={{ textAlign: 'center', fontSize: '12px', color: '#888' }}>{doneCount} of {weekData?.days.length || 5} days this week</div>
+        <div style={{ textAlign: 'center', fontSize: '12px', color: '#888' }}>{doneCount} of {weekData?.days.length || 5} reading days this week</div>
 
         {weekReadings.some(d => d.verse) && (
           <div style={{ background: '#fff', border: '0.5px solid #e8e6e2', borderRadius: '14px', overflow: 'hidden' }}>

@@ -488,19 +488,27 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek }) {
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const today = new Date()
-  const startDate = localStorage.getItem('grace_start_date') ? new Date(localStorage.getItem('grace_start_date')) : new Date()
+  today.setHours(0, 0, 0, 0)
+  const startDate = localStorage.getItem('grace_start_date')
+    ? new Date(localStorage.getItem('grace_start_date'))
+    : new Date()
 
   const getDayStatus = (d) => {
     const date = new Date(year, month, d)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    date.setHours(0, 0, 0, 0)
     const dow = date.getDay()
     if (dow === 0) return 'sunday'
     if (dow === 6) return 'saturday'
+    // Future dates are always upcoming
+    if (date > today) return 'future'
     const diffDays = Math.floor((date - startDate) / 86400000)
     if (diffDays < 0) return 'future'
     const weekN = Math.floor(diffDays / 7) + 1
     const dayIdx = dow - 1
     const key = `w${weekN}_d${dayIdx}`
-    return myProgress.data.readings[key]?.done ? 'complete' : date < today ? 'missed' : 'future'
+    return myProgress.data.readings[key]?.done ? 'complete' : 'missed'
   }
 
   const totalDays = Array.from({ length: daysInMonth }, (_, i) => i + 1)

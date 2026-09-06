@@ -98,6 +98,12 @@ export function useProgress(userId) {
       { onConflict: 'user_id,log_date' }
     )
     if (error) console.error('markPrayer error:', error)
+    // On weekends, prayer completion counts toward streak
+    const dow = new Date().getDay()
+    if (dow === 0 || dow === 6) {
+      const slots = Object.values(updated).filter(Boolean)
+      if (slots.length >= 1) updateStreak()
+    }
   }
 
   const saveOffering = async (date, amount, given) => {

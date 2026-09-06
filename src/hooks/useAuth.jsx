@@ -33,7 +33,18 @@ export function AuthProvider({ children }) {
     setProfile(data)
     if (data?.partner_id) loadPartner(data.partner_id)
     else setLoading(false)
+    // Update last_seen immediately on load
+    supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', userId)
   }
+
+  // Heartbeat — update last_seen every 3 minutes while app is open
+  useEffect(() => {
+    if (!session?.user?.id) return
+    const interval = setInterval(() => {
+      supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', session.user.id)
+    }, 3 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [session?.user?.id])
 
   const loadPartner = async (partnerId) => {
     const { data } = await supabase
@@ -137,7 +148,7 @@ export function AuthProvider({ children }) {
     // Mark code as used
     await supabase.from('invite_codes').update({ used: true }).eq('code', trimmed)
 
-    // Reload profile and partner
+    // Reload profile and partner so UI updates immediately
     await loadProfile(myId)
     return { success: true }
   }

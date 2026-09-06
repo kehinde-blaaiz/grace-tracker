@@ -75,6 +75,8 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!session) return
+    // Optimistic update — show change immediately
+    setProfile(prev => ({ ...prev, ...updates }))
     const { data } = await supabase
       .from('profiles')
       .update(updates)

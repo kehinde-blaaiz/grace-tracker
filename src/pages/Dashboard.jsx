@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [showStreakPopup, setShowStreakPopup] = useState(false)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [calMonth, setCalMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }))
 
   useEffect(() => {
@@ -132,7 +133,7 @@ export default function Dashboard() {
           <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} showSnack={showSnack} />
         )}
         {activeTab === 'profile' && (
-          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} showSnack={showSnack} />
+          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} showSnack={showSnack} setShowSignOutModal={setShowSignOutModal} />
         )}
       </div>
 
@@ -243,6 +244,27 @@ export default function Dashboard() {
               ))}
             </div>
             <button onClick={() => setShowEmojiPicker(false)} style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '12px', color: '#666', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* SIGN OUT MODAL */}
+      {showSignOutModal && (
+        <div onClick={() => setShowSignOutModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 150 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 20px 40px', width: '100%', maxWidth: '480px', margin: '0 auto' }}>
+            <div style={{ width: '36px', height: '4px', background: '#e5e2db', borderRadius: '999px', margin: '0 auto 20px' }} />
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12', marginBottom: '6px' }}>Sign out?</div>
+              <div style={{ fontSize: '14px', color: '#888', lineHeight: '1.6' }}>Your progress is saved. You can sign back in anytime.</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button onClick={signOut} style={{ width: '100%', padding: '14px', background: '#A32D2D', border: 'none', borderRadius: '14px', color: '#fff', fontSize: '15px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Yes, sign out
+              </button>
+              <button onClick={() => setShowSignOutModal(false)} style={{ width: '100%', padding: '14px', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '14px', color: '#555', fontSize: '15px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -409,13 +431,13 @@ function OfferingCard({ data, todayKey, myProgress, offeringAmount }) {
   return (
     <div style={{ background: '#FAEEDA', border: '0.5px solid #EF9F27', borderRadius: '16px', padding: '16px' }}>
       <div style={{ fontSize: '11px', fontWeight: '600', color: '#854F0B', letterSpacing: '0.06em', marginBottom: '10px' }}>SUNDAY OFFERING</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '15px', color: '#BA7517', fontWeight: '600' }}>₦</span>
-        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} style={{ flex: 1, border: '0.5px solid #EF9F27', borderRadius: '10px', padding: '8px 12px', fontSize: '14px', background: '#fff', outline: 'none', fontFamily: 'inherit' }} />
-        <button onClick={() => myProgress.saveOffering(todayKey, Number(amount), !given)} style={{ padding: '8px 14px', background: given ? '#BA7517' : 'transparent', border: '1.5px solid #BA7517', borderRadius: '10px', color: given ? '#fff' : '#BA7517', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-          {given ? '✓ Given' : 'Mark given'}
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <span style={{ fontSize: '15px', color: '#BA7517', fontWeight: '600', flexShrink: 0 }}>₦</span>
+        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} style={{ flex: 1, minWidth: 0, border: '0.5px solid #EF9F27', borderRadius: '10px', padding: '8px 12px', fontSize: '14px', background: '#fff', outline: 'none', fontFamily: 'inherit' }} />
       </div>
+      <button onClick={() => myProgress.saveOffering(todayKey, Number(amount), !given)} style={{ width: '100%', padding: '11px', background: given ? '#BA7517' : 'transparent', border: '1.5px solid #BA7517', borderRadius: '10px', color: given ? '#fff' : '#BA7517', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' }}>
+        {given ? '✓ Given' : 'Mark given'}
+      </button>
       {given && <div style={{ marginTop: '8px', fontSize: '12px', color: '#854F0B', fontStyle: 'italic' }}>Thank you — God sees your heart 🙏</div>}
     </div>
   )
@@ -696,7 +718,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
 }
 
 // ── Profile tab ────────────────────────────────────────────────────────────────
-function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay, showSnack }) {
+function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay, showSnack, setShowSignOutModal }) {
   const [name, setName] = useState(profile?.display_name || '')
   const [offering, setOffering] = useState(profile?.offering_amount || '')
   const streak = myProgress.data.streak.last_active_date ? myProgress.data.streak.current_streak : 0
@@ -796,7 +818,7 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
           </div>
         </div>
 
-        <button onClick={signOut} style={{ width: '100%', padding: '14px', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '14px', color: '#A32D2D', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontFamily: 'inherit' }}>
+        <button onClick={() => setShowSignOutModal(true)} style={{ width: '100%', padding: '14px', background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '14px', color: '#A32D2D', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontFamily: 'inherit' }}>
           <i className="ti ti-logout" style={{ fontSize: '16px' }} aria-hidden="true" /> Sign out
         </button>
       </div>

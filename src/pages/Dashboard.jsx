@@ -774,9 +774,9 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   const streakTitle = getStreakTitle(streak)
 
   // Online status from last_seen
-  const getOnlineStatus = () => {
-    if (!partner.last_seen) return { label: 'Never seen', color: '#bbb', dot: '#ccc' }
-    const diff = Date.now() - new Date(partner.last_seen).getTime()
+  const getOnlineStatus = (lastSeen) => {
+    if (!lastSeen) return { label: 'Never seen', color: '#bbb', dot: '#ccc', bg: null }
+    const diff = Date.now() - new Date(lastSeen).getTime()
     const mins = Math.floor(diff / 60000)
     if (mins < 5) return { label: 'Online now', color: '#27500A', dot: '#2D5016', bg: '#EAF3DE' }
     if (mins < 60) return { label: `${mins}m ago`, color: '#888', dot: '#bbb', bg: null }
@@ -787,27 +787,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   }
   const onlineStatus = getOnlineStatus(partnerLastSeen)
 
-  // Refresh partner's last_seen every time Buddy tab is viewed
-  useEffect(() => {
-    if (!partner?.id) return
-    import('../lib/supabase').then(({ supabase }) => {
-      supabase.from('profiles').select('last_seen').eq('id', partner.id).single()
-        .then(({ data }) => { if (data?.last_seen) partner.last_seen = data.last_seen })
-    })
-  }, [])
 
-  // Online / last seen
-  const getPresence = (lastSeen) => {
-    if (!lastSeen) return { label: 'Never seen', color: '#bbb', dot: '#bbb' }
-    const diffMs = Date.now() - new Date(lastSeen).getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    if (diffMins < 5) return { label: 'Online now', color: '#27500A', dot: '#4CAF50' }
-    if (diffMins < 60) return { label: `Last seen ${diffMins}m ago`, color: '#888', dot: '#bbb' }
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return { label: `Last seen ${diffHours}h ago`, color: '#888', dot: '#bbb' }
-    const diffDays = Math.floor(diffHours / 24)
-    return { label: `Last seen ${diffDays}d ago`, color: '#bbb', dot: '#bbb' }
-  }
   const presence = getPresence(partner.last_seen)
   const weekData = READING_PLAN[viewWeek - 1]
   const isCurrentWeek = viewWeek === currentWeek

@@ -668,8 +668,17 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }
 
 // ── Partner tab ────────────────────────────────────────────────────────────────
 function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack }) {
-  const [viewWeek, setViewWeek] = useState(currentWeek)
-  const { generateInviteCode, enterInviteCode } = useAuth()
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    if (!partner?.id || refreshing) return
+    setRefreshing(true)
+    // Reload partner's latest profile (including last_seen)
+    const { supabase } = await import('../lib/supabase')
+    await supabase.from('profiles').select('*').eq('id', partner.id).single()
+    await partnerProgress.refetch()
+    setRefreshing(false)
+  }
   const [myCode, setMyCode] = useState(null)
   const [enteredCode, setEnteredCode] = useState('')
   const [linking, setLinking] = useState(false)
@@ -684,6 +693,17 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
         .order('created_at', { ascending: false }).limit(1).single()
         .then(({ data }) => { setMyCode(data?.code || null); setLoadingCode(false) })
     })
+    // Poll every 5 seconds — detect when partner enters your code on their end
+    const interval = setInterval(async () => {
+      const { supabase } = await import('../lib/supabase')
+      const { data } = await supabase
+        .from('profiles')
+        .select('partner_id')
+        .eq('id', myProfile.id)
+        .single()
+      if (data?.partner_id) window.location.reload()
+    }, 5000)
+    return () => clearInterval(interval)
   }, [partner, myProfile?.id])
 
   if (!partner) return (
@@ -822,7 +842,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
               <span style={{ fontSize: '11px', color: onlineStatus.color, fontWeight: '500' }}>{onlineStatus.label}</span>
             </div>
           </div>
-          <button onClick={() => partnerProgress.refetch()} style={{ background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '14px', color: '#888', flexShrink: 0 }}>↺</button>
+          <button onClick={handleRefresh} style={{ background: 'none', border: '0.5px solid #e8e6e2', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', fontSize: refreshing ? '10px' : '14px', color: '#888', flexShrink: 0 }}>{refreshing ? '…' : '↺'}</button>
         </div>
       </div>
 

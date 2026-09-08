@@ -669,14 +669,17 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }
 // ── Partner tab ────────────────────────────────────────────────────────────────
 function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack }) {
   const [refreshing, setRefreshing] = useState(false)
+  const [partnerLastSeen, setPartnerLastSeen] = useState(partner?.last_seen)
 
   const handleRefresh = async () => {
     if (!partner?.id || refreshing) return
     setRefreshing(true)
-    // Reload partner's latest profile (including last_seen)
-    const { supabase } = await import('../lib/supabase')
-    await supabase.from('profiles').select('*').eq('id', partner.id).single()
-    await partnerProgress.refetch()
+    try {
+      const { supabase } = await import('../lib/supabase')
+      const { data } = await supabase.from('profiles').select('last_seen').eq('id', partner.id).single()
+      if (data?.last_seen) setPartnerLastSeen(data.last_seen)
+      await partnerProgress.refetch()
+    } catch (e) {}
     setRefreshing(false)
   }
   const [myCode, setMyCode] = useState(null)
@@ -782,7 +785,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
     const days = Math.floor(hours / 24)
     return { label: `${days}d ago`, color: '#aaa', dot: '#ddd', bg: null }
   }
-  const onlineStatus = getOnlineStatus()
+  const onlineStatus = getOnlineStatus(partnerLastSeen)
 
   // Refresh partner's last_seen every time Buddy tab is viewed
   useEffect(() => {

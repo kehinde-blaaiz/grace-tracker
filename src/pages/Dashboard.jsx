@@ -476,6 +476,7 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
   const todayDOW = today.getDay()
   const isFutureWeek = weekNum > currentWeek
   const isPastWeek = weekNum < currentWeek
+  const isCurrentWeek = weekNum === currentWeek
 
   const getDayState = (dayIndex) => {
     if (isFutureWeek) return 'future'

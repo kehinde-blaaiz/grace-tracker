@@ -106,7 +106,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12' }}>
-              { activeTab === 'week'     ? 'This week'
+              { activeTab === 'week'     ? 'Reading plan'
               : activeTab === 'calendar' ? 'Calendar'
               : activeTab === 'partner'  ? 'Buddy'
               : activeTab === 'profile'  ? 'Profile'
@@ -491,18 +491,18 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
   weekEnd.setDate(weekStart.getDate() + 4)
   const fmtDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const weekRange = `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}`
-  const weekLabel = isCurrentWeek ? `This week` : isPastWeek ? `Week ${weekNum}` : `Week ${weekNum}`
+  const weekLabel = `Week ${weekNum} · ${weekRange}`
 
   return (
     <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>SS Lesson {ssLesson} · {weekRange}</div>
-          <div style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a12' }}>
+          <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>SS Lesson {ssLesson}</div>
+          <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             {weekLabel}
-            {isCurrentWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#1a3a0a', color: '#fff', padding: '2px 8px', borderRadius: '999px', marginLeft: '8px', verticalAlign: 'middle' }}>current</span>}
-            {isFutureWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#e8e6e2', color: '#888', padding: '2px 8px', borderRadius: '999px', marginLeft: '8px', verticalAlign: 'middle' }}>upcoming</span>}
-            {isPastWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#f5f4f1', color: '#888', padding: '2px 8px', borderRadius: '999px', marginLeft: '8px', verticalAlign: 'middle' }}>past</span>}
+            {isCurrentWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#1a3a0a', color: '#fff', padding: '2px 8px', borderRadius: '999px' }}>today</span>}
+            {isFutureWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#e8e6e2', color: '#888', padding: '2px 8px', borderRadius: '999px' }}>upcoming</span>}
+            {isPastWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#f5f4f1', color: '#aaa', padding: '2px 8px', borderRadius: '999px' }}>past</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>

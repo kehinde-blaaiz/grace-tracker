@@ -12,7 +12,15 @@ export default function Dashboard() {
   const partnerProgress = useProgress(partner?.id)
 
   const [activeTab, setActiveTab] = useState('today')
-  const [currentWeek, setCurrentWeek] = useState(1)
+
+  const getCurrentWeek = () => {
+    const anchor = Date.UTC(2026, 8, 1)
+    const now = Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+    const diffDays = Math.floor((now - anchor) / 86400000)
+    return Math.max(1, Math.min(Math.floor(diffDays / 7) + 1, READING_PLAN.length))
+  }
+
+  const [currentWeek, setCurrentWeek] = useState(getCurrentWeek)
   const [toast, setToast] = useState('')
   const [snack, setSnack] = useState({ msg: '', visible: false })
   const [showStreakPopup, setShowStreakPopup] = useState(false)
@@ -21,15 +29,6 @@ export default function Dashboard() {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [calMonth, setCalMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }))
 
-  useEffect(() => {
-    // Use UTC dates to avoid timezone issues
-    const anchor = Date.UTC(2026, 8, 1) // Sept 1 2026 in UTC (month is 0-indexed)
-    const now = Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
-    const diffDays = Math.floor((now - anchor) / 86400000)
-    const week = Math.max(1, Math.min(Math.floor(diffDays / 7) + 1, READING_PLAN.length))
-    setCurrentWeek(week)
-    localStorage.setItem('grace_start_date', '2026-09-01')
-  }, [])
 
   const celebrate = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
   const showSnack = (msg) => { setSnack({ msg, visible: true }); setTimeout(() => setSnack({ msg: '', visible: false }), 3000) }

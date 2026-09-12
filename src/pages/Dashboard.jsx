@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useProgress } from '../hooks/useProgress'
-import { READING_PLAN, getStreakTitle, SS_LESSON_URL } from '../data/readingPlan'
+import { READING_PLAN, generatePlan, getStreakTitle, SS_LESSON_URL } from '../data/readingPlan'
 import NudgeButton from '../components/NudgeButton'
 import NotificationSettings from '../components/NotificationSettings'
+import ReadingPlanSettings from '../components/ReadingPlanSettings'
 
 export default function Dashboard() {
   const { profile, signOut, getPartner, updateProfile, currentUserId } = useAuth()
   const partner = getPartner()
   const myProgress = useProgress(currentUserId)
   const partnerProgress = useProgress(partner?.id)
+
+  // Dynamic reading plan based on profile settings
+  const [activePlan, setActivePlan] = useState(() =>
+    generatePlan(profile?.plan_book || 'Mark', profile?.plan_chapters_per_day || 1)
+  )
+
+  const handlePlanChange = (book, chaptersPerDay) => {
+    setActivePlan(generatePlan(book, chaptersPerDay))
+  }
 
   const [activeTab, setActiveTab] = useState('today')
 
@@ -37,7 +47,7 @@ export default function Dashboard() {
   const isSat = todayDOW === 6
   const isSun = todayDOW === 0
   const todayDayIndex = (todayDOW === 0 || todayDOW === 6) ? null : todayDOW - 1
-  const weekData = READING_PLAN[currentWeek - 1]
+  const weekData = activePlan[currentWeek - 1]
   const todayReading = todayDayIndex !== null && weekData ? weekData.days[todayDayIndex] : null
   const streakTitle = getStreakTitle(myProgress.data.streak.current_streak)
   const prayerTimes = { morning: profile?.prayer_morning ?? true, afternoon: profile?.prayer_afternoon ?? false, night: profile?.prayer_night ?? true }
@@ -127,7 +137,7 @@ export default function Dashboard() {
           <TodayTab isSat={isSat} isSun={isSun} weekData={weekData} currentWeek={currentWeek} todayReading={todayReading} todayDayIndex={todayDayIndex} myProgress={myProgress} todayKey={todayKey} prayerSlots={prayerSlots} dayComplete={dayComplete} celebrate={celebrate} profile={profile} />
         )}
         {activeTab === 'week' && weekData && (
-          <WeekTab weekData={weekData} currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} myProgress={myProgress} celebrate={celebrate} />
+          <WeekTab weekData={weekData} currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} myProgress={myProgress} celebrate={celebrate} activePlan={activePlan} />
         )}
         {activeTab === 'calendar' && (
           <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} profile={profile} />
@@ -136,7 +146,7 @@ export default function Dashboard() {
           <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} showSnack={showSnack} />
         )}
         {activeTab === 'profile' && (
-          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} showSnack={showSnack} setShowSignOutModal={setShowSignOutModal} />
+          <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} showSnack={showSnack} setShowSignOutModal={setShowSignOutModal} partner={partner} onPlanChange={handlePlanChange} />
         )}
       </div>
 
@@ -456,7 +466,7 @@ function OfferingCard({ data, todayKey, myProgress, offeringAmount }) {
 }
 
 // ── Week tab ───────────────────────────────────────────────────────────────────
-function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate }) {
+function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate, activePlan }) {
   const { days, ssLesson, weekNum } = weekData
   const ssData = myProgress.data.ssProgress[`w${weekNum}`] || {}
   const weekReadings = days.map(day => ({
@@ -792,7 +802,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   const streak = lastActive ? partnerProgress.data.streak.current_streak : 0
   const streakTitle = getStreakTitle(streak)
   const onlineStatus = getOnlineStatus(partnerLastSeen)
-  const weekData = READING_PLAN[viewWeek - 1]
+  const weekData = activePlan[viewWeek - 1]
   const isCurrentWeek = viewWeek === currentWeek
   const todayKey = new Date().toISOString().split('T')[0]
   const todayDOW = new Date().getDay()
@@ -918,7 +928,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
 
 
 // ── Profile tab ────────────────────────────────────────────────────────────────
-function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay, showSnack, setShowSignOutModal }) {
+function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay, showSnack, setShowSignOutModal, partner, onPlanChange }) {
   const [name, setName] = useState(profile?.display_name || '')
   const [offering, setOffering] = useState(profile?.offering_amount || '')
   const streak = myProgress.data.streak.last_active_date ? myProgress.data.streak.current_streak : 0
@@ -952,6 +962,8 @@ function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreak
         </button>
 
         <NotificationSettings profile={profile} updateProfile={updateProfile} onSnack={showSnack} />
+
+        <ReadingPlanSettings profile={profile} partner={partner} updateProfile={updateProfile} onPlanChange={onPlanChange} />
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', overflow: 'hidden' }}>
           <div style={{ padding: '13px 16px', borderBottom: '0.5px solid #f0ede6' }}>

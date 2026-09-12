@@ -22,15 +22,12 @@ export default function Dashboard() {
   const [calMonth, setCalMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }))
 
   useEffect(() => {
-    // Anchor to Monday Sept 1 2026 — week 1 of the reading plan
-    // This is fixed so all users share the same week number
     const ANCHOR_DATE = new Date('2026-09-01T00:00:00')
     const now = new Date()
-    now.setHours(0, 0, 0, 0)
+    now.setHours(12, 0, 0, 0) // Use noon to avoid timezone edge cases
     const diffDays = Math.floor((now - ANCHOR_DATE) / 86400000)
     const week = Math.max(1, Math.min(Math.floor(diffDays / 7) + 1, READING_PLAN.length))
     setCurrentWeek(week)
-    // Store for calendar use
     localStorage.setItem('grace_start_date', '2026-09-01')
   }, [])
 

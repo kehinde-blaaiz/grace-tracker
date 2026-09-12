@@ -22,10 +22,10 @@ export default function Dashboard() {
   const [calMonth, setCalMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }))
 
   useEffect(() => {
-    const ANCHOR_DATE = new Date('2026-09-01T00:00:00')
-    const now = new Date()
-    now.setHours(12, 0, 0, 0) // Use noon to avoid timezone edge cases
-    const diffDays = Math.floor((now - ANCHOR_DATE) / 86400000)
+    // Use UTC dates to avoid timezone issues
+    const anchor = Date.UTC(2026, 8, 1) // Sept 1 2026 in UTC (month is 0-indexed)
+    const now = Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+    const diffDays = Math.floor((now - anchor) / 86400000)
     const week = Math.max(1, Math.min(Math.floor(diffDays / 7) + 1, READING_PLAN.length))
     setCurrentWeek(week)
     localStorage.setItem('grace_start_date', '2026-09-01')
@@ -484,12 +484,12 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
     return 'future'
   }
 
-  const ANCHOR = new Date('2026-09-01T00:00:00')
+  const ANCHOR = new Date(Date.UTC(2026, 8, 1))
   const weekStart = new Date(ANCHOR)
-  weekStart.setDate(ANCHOR.getDate() + (weekNum - 1) * 7)
+  weekStart.setUTCDate(ANCHOR.getUTCDate() + (weekNum - 1) * 7)
   const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekStart.getDate() + 4)
-  const fmtDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  weekEnd.setUTCDate(weekStart.getUTCDate() + 4)
+  const fmtDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
   const weekRange = `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}`
   const weekLabel = `Week ${weekNum} · ${weekRange}`
 
@@ -584,7 +584,7 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const startDate = new Date('2026-09-01T00:00:00')
+  const startDate = new Date(Date.UTC(2026, 8, 1))
 
   const getDayStatus = (d) => {
     const date = new Date(year, month, d)

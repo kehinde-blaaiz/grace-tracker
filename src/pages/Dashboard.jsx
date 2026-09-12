@@ -668,9 +668,34 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }
 
 // ── Partner tab ────────────────────────────────────────────────────────────────
 function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack }) {
+  // All hooks first — no exceptions
   const [refreshing, setRefreshing] = useState(false)
-  const [partnerLastSeen, setPartnerLastSeen] = useState(partner?.last_seen)
+  const [partnerLastSeen, setPartnerLastSeen] = useState(partner?.last_seen ?? null)
+  const [myCode, setMyCode] = useState(null)
+  const [enteredCode, setEnteredCode] = useState('')
+  const [linking, setLinking] = useState(false)
+  const [linkError, setLinkError] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [loadingCode, setLoadingCode] = useState(true)
+  const [viewWeek, setViewWeek] = useState(currentWeek)
+  const { generateInviteCode, enterInviteCode } = useAuth()
 
+  useEffect(() => {
+    if (partner || !myProfile?.id) { setLoadingCode(false); return }
+    import('../lib/supabase').then(({ supabase }) => {
+      supabase.from('invite_codes').select('code').eq('created_by', myProfile.id).eq('used', false)
+        .order('created_at', { ascending: false }).limit(1).single()
+        .then(({ data }) => { setMyCode(data?.code || null); setLoadingCode(false) })
+    })
+    const interval = setInterval(async () => {
+      const { supabase } = await import('../lib/supabase')
+      const { data } = await supabase.from('profiles').select('partner_id').eq('id', myProfile.id).single()
+      if (data?.partner_id) window.location.reload()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [partner, myProfile?.id])
+
+  // Handlers — after all hooks
   const handleRefresh = async () => {
     if (!partner?.id || refreshing) return
     setRefreshing(true)
@@ -682,33 +707,18 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
     } catch (e) {}
     setRefreshing(false)
   }
-  const [myCode, setMyCode] = useState(null)
-  const [enteredCode, setEnteredCode] = useState('')
-  const [linking, setLinking] = useState(false)
-  const [linkError, setLinkError] = useState('')
-  const [copied, setCopied] = useState(false)
-  const [loadingCode, setLoadingCode] = useState(true)
 
-  useEffect(() => {
-    if (partner || !myProfile?.id) { setLoadingCode(false); return }
-    import('../lib/supabase').then(({ supabase }) => {
-      supabase.from('invite_codes').select('code').eq('created_by', myProfile.id).eq('used', false)
-        .order('created_at', { ascending: false }).limit(1).single()
-        .then(({ data }) => { setMyCode(data?.code || null); setLoadingCode(false) })
-    })
-    // Poll every 5 seconds — detect when partner enters your code on their end
-    const interval = setInterval(async () => {
-      const { supabase } = await import('../lib/supabase')
-      const { data } = await supabase
-        .from('profiles')
-        .select('partner_id')
-        .eq('id', myProfile.id)
-        .single()
-      if (data?.partner_id) window.location.reload()
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [partner, myProfile?.id])
+  const getOnlineStatus = (lastSeen) => {
+    if (!lastSeen) return { label: 'Never seen', color: '#bbb', dot: '#ccc', bg: null }
+    const mins = Math.floor((Date.now() - new Date(lastSeen).getTime()) / 60000)
+    if (mins < 5) return { label: 'Online now', color: '#27500A', dot: '#2D5016', bg: '#EAF3DE' }
+    if (mins < 60) return { label: `${mins}m ago`, color: '#888', dot: '#bbb', bg: null }
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return { label: `${hours}h ago`, color: '#888', dot: '#bbb', bg: null }
+    return { label: `${Math.floor(hours / 24)}d ago`, color: '#aaa', dot: '#ddd', bg: null }
+  }
 
+  // No-partner view
   if (!partner) return (
     <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
@@ -716,14 +726,10 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
         <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Link your accountability partner</div>
         <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.6' }}>Share your code or enter theirs to get started.</div>
       </div>
-
-      {/* Generate code card */}
       <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', padding: '16px' }}>
         <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Share your code</div>
         <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>Send this to your partner so they can link with you.</div>
-        {loadingCode ? (
-          <div style={{ fontSize: '13px', color: '#aaa' }}>Loading…</div>
-        ) : myCode ? (
+        {loadingCode ? <div style={{ fontSize: '13px', color: '#aaa' }}>Loading…</div> : myCode ? (
           <>
             <div style={{ background: '#f5f4f1', borderRadius: '10px', padding: '12px', textAlign: 'center', marginBottom: '8px' }}>
               <div style={{ fontSize: '28px', fontWeight: '700', color: '#1a1a12', letterSpacing: '6px', fontFamily: 'monospace' }}>{myCode}</div>
@@ -740,14 +746,11 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
           </button>
         )}
       </div>
-
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{ flex: 1, height: '0.5px', background: '#e8e6e2' }} />
         <span style={{ fontSize: '12px', color: '#aaa' }}>or</span>
         <div style={{ flex: 1, height: '0.5px', background: '#e8e6e2' }} />
       </div>
-
-      {/* Enter partner code */}
       <div style={{ background: '#fff', borderRadius: '16px', border: '0.5px solid #e8e6e2', padding: '16px' }}>
         <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Enter your partner's code</div>
         <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>Ask your partner for their 6-character code.</div>
@@ -760,7 +763,6 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
           {linking ? 'Linking…' : 'Link with partner'}
         </button>
       </div>
-
       <div style={{ textAlign: 'center', fontSize: '12px', color: '#aaa', fontStyle: 'italic', lineHeight: '1.6', padding: '8px 0' }}>
         "As iron sharpens iron, so one person sharpens another." — Proverbs 27:17
       </div>
@@ -772,23 +774,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   const lastActive = partnerProgress.data.streak.last_active_date
   const streak = lastActive ? partnerProgress.data.streak.current_streak : 0
   const streakTitle = getStreakTitle(streak)
-
-  // Online status from last_seen
-  const getOnlineStatus = (lastSeen) => {
-    if (!lastSeen) return { label: 'Never seen', color: '#bbb', dot: '#ccc', bg: null }
-    const diff = Date.now() - new Date(lastSeen).getTime()
-    const mins = Math.floor(diff / 60000)
-    if (mins < 5) return { label: 'Online now', color: '#27500A', dot: '#2D5016', bg: '#EAF3DE' }
-    if (mins < 60) return { label: `${mins}m ago`, color: '#888', dot: '#bbb', bg: null }
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return { label: `${hours}h ago`, color: '#888', dot: '#bbb', bg: null }
-    const days = Math.floor(hours / 24)
-    return { label: `${days}d ago`, color: '#aaa', dot: '#ddd', bg: null }
-  }
   const onlineStatus = getOnlineStatus(partnerLastSeen)
-
-
-  const presence = getPresence(partner.last_seen)
   const weekData = READING_PLAN[viewWeek - 1]
   const isCurrentWeek = viewWeek === currentWeek
   const todayKey = new Date().toISOString().split('T')[0]
@@ -798,10 +784,8 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
   const todayPrayers = partnerProgress.data.prayers[todayKey] || {}
   const weekReadings = weekData ? weekData.days.map(day => ({ ...day, done: !!partnerProgress.data.readings[`w${viewWeek}_d${day.dayIndex}`]?.done, verse: partnerProgress.data.verses[`w${viewWeek}_d${day.dayIndex}`] || '' })) : []
   const doneCount = weekReadings.filter(d => d.done).length
-  const ssData = partnerProgress.data.ssProgress[`w${viewWeek}`] || {}
   const weeklyVerse = partnerProgress.data.weeklyVerses[`w${viewWeek}`] || ''
 
-  // Partner avatar
   const partnerAvatarUrl = partner.avatar_url
   const PartnerAvatar = () => (
     <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: partner.avatar_color || '#085041', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: partnerAvatarUrl?.startsWith('emoji:') ? '26px' : '20px', fontWeight: '600', flexShrink: 0, overflow: 'hidden' }}>
@@ -860,7 +844,6 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
             <span style={{ fontSize: '9px', color: '#888' }}>Sat</span>
           </div>
           {(() => {
-            // Find Sunday of this week and check partner's prayer
             const anchor = new Date('2026-09-01')
             const sundayDate = new Date(anchor)
             sundayDate.setDate(anchor.getDate() + (viewWeek - 1) * 7 + 6)
@@ -915,6 +898,7 @@ function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentU
     </div>
   )
 }
+
 
 // ── Profile tab ────────────────────────────────────────────────────────────────
 function ProfileTab({ profile, updateProfile, myProgress, signOut, setShowStreakPopup, setShowAvatarPicker, streakTitle, AvatarDisplay, showSnack, setShowSignOutModal }) {

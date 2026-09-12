@@ -100,7 +100,9 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {activeTab === 'today' ? (
             <div>
-              <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>Grow Together, one day at a time.</div>
+              <div style={{ fontSize: '13px', color: '#888', marginBottom: '2px' }}>
+                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </div>
               <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', lineHeight: 1.2 }}>
                 {getTimeOfDay()},<br />{profile?.display_name || 'friend'}.
               </div>
@@ -484,14 +486,26 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
     return 'future'
   }
 
-  const weekLabel = isFutureWeek ? `Week ${weekNum} — upcoming` : isPastWeek ? `Week ${weekNum} — past` : 'This week'
+  const ANCHOR = new Date('2026-09-01T00:00:00')
+  const weekStart = new Date(ANCHOR)
+  weekStart.setDate(ANCHOR.getDate() + (weekNum - 1) * 7)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 4)
+  const fmtDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const weekRange = `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}`
+  const weekLabel = isCurrentWeek ? `This week` : isPastWeek ? `Week ${weekNum}` : `Week ${weekNum}`
 
   return (
     <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>SS Lesson {ssLesson}</div>
-          <div style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a12' }}>{weekLabel}</div>
+          <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>SS Lesson {ssLesson} · {weekRange}</div>
+          <div style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a12' }}>
+            {weekLabel}
+            {isCurrentWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#1a3a0a', color: '#fff', padding: '2px 8px', borderRadius: '999px', marginLeft: '8px', verticalAlign: 'middle' }}>current</span>}
+            {isFutureWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#e8e6e2', color: '#888', padding: '2px 8px', borderRadius: '999px', marginLeft: '8px', verticalAlign: 'middle' }}>upcoming</span>}
+            {isPastWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#f5f4f1', color: '#888', padding: '2px 8px', borderRadius: '999px', marginLeft: '8px', verticalAlign: 'middle' }}>past</span>}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
           {[
@@ -521,9 +535,15 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate 
               const state = getDayState(day.dayIndex)
               const isToday = state === 'today'
               const isFuture = state === 'future'
+              const dayDate = new Date(weekStart)
+              dayDate.setDate(weekStart.getDate() + day.dayIndex)
+              const dayLabel = dayDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
               return (
                 <div key={day.dayIndex} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 14px', borderBottom: i < weekReadings.length - 1 ? '0.5px solid #f0ede6' : 'none', background: day.done ? '#f7fbf7' : isToday ? '#FAFEF7' : '#fff', borderLeft: isToday ? '3px solid #1a3a0a' : '3px solid transparent' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: day.done ? '#1a3a0a' : isToday ? '#1a3a0a' : isFuture ? '#ccc' : '#888', width: '32px', flexShrink: 0 }}>{day.dayName.slice(0, 3)}</span>
+                  <div style={{ width: '42px', flexShrink: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: day.done ? '#1a3a0a' : isToday ? '#1a3a0a' : isFuture ? '#ccc' : '#888' }}>{day.dayName.slice(0, 3)}</div>
+                    <div style={{ fontSize: '10px', color: isFuture ? '#ddd' : '#aaa', marginTop: '1px' }}>{dayLabel}</div>
+                  </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '13px', color: isFuture ? '#ccc' : '#1a1a12', fontWeight: isToday ? '600' : '500' }}>{day.label}</div>
                     {day.verse && !isFuture && <div style={{ fontSize: '11px', color: '#888', fontStyle: 'italic', marginTop: '2px' }}>"{day.verse}"</div>}

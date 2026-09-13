@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   const inputStyle = {
     width: '100%', padding: '12px 14px', border: '0.5px solid #e8e6e2',
-    borderRadius: '12px', fontSize: '14px', fontFamily: 'inherit',
+    borderRadius: '12px', fontSize: '16px', fontFamily: 'inherit',
     background: '#f5f4f1', outline: 'none', color: '#1a1a12',
   }
 
@@ -38,11 +38,11 @@ export default function LoginPage() {
       <div style={{ background: '#fff', borderRadius: '28px', padding: '40px 28px 32px', maxWidth: '380px', width: '100%', border: '0.5px solid #e8e6e2' }}>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: '#0d0d0a', marginBottom: '16px', overflow: 'hidden' }}>
-            <img src="/grace-logo.png" alt="Grace and Growth" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: '#0d0d0a', marginBottom: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/grace-logo.png" alt="Grow Together" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
           </div>
-          <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Grace & Growth</div>
-          <div style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>Your companion for today.</div>
+          <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Grow Together</div>
+          <div style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>Grow together, one day at a time.</div>
         </div>
 
         <div style={{ display: 'flex', border: '0.5px solid #e8e6e2', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>

@@ -14,20 +14,22 @@ export default function Dashboard() {
 
   // Dynamic reading plan based on profile settings
   const [activePlan, setActivePlan] = useState(() =>
-    generatePlan(profile?.plan_book || 'Mark', profile?.plan_chapters_per_day || 1)
+    generatePlan(profile?.plan_book || 'Mark', profile?.plan_chapters_per_day || 1, profile?.plan_testament || 'nt')
   )
 
-  const handlePlanChange = (book, chaptersPerDay) => {
-    setActivePlan(generatePlan(book, chaptersPerDay))
+  const handlePlanChange = (book, chaptersPerDay, testament = 'nt') => {
+    setActivePlan(generatePlan(book, chaptersPerDay, testament))
   }
 
   const [activeTab, setActiveTab] = useState('today')
 
   const getCurrentWeek = () => {
-    const anchor = Date.UTC(2026, 8, 1)
+    const anchor = Date.UTC(2026, 8, 1) // Sept 1 2026
     const now = Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
     const diffDays = Math.floor((now - anchor) / 86400000)
-    return Math.max(1, Math.min(Math.floor(diffDays / 7) + 1, READING_PLAN.length))
+    const week = Math.floor(diffDays / 7) + 1
+    console.log('[week calc] diffDays:', diffDays, 'week:', week, 'date:', new Date().toDateString())
+    return Math.max(1, week)
   }
 
   const [currentWeek, setCurrentWeek] = useState(getCurrentWeek)
@@ -509,8 +511,7 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate,
           <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>SS Lesson {ssLesson}</div>
           <div style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a12', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             {weekLabel}
-            {isCurrentWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#1a3a0a', color: '#fff', padding: '2px 8px', borderRadius: '999px' }}>today</span>}
-            {isFutureWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#e8e6e2', color: '#888', padding: '2px 8px', borderRadius: '999px' }}>upcoming</span>}
+            {isCurrentWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#1a3a0a', color: '#fff', padding: '2px 8px', borderRadius: '999px' }}>current week</span>}
             {isPastWeek && <span style={{ fontSize: '11px', fontWeight: '500', background: '#f5f4f1', color: '#aaa', padding: '2px 8px', borderRadius: '999px' }}>past</span>}
           </div>
         </div>

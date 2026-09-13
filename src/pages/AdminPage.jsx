@@ -10,12 +10,21 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     setLoading(true)
+
+    // Check if user is logged in — RLS requires auth
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      alert('You must be logged in to view the admin page. Open the app first, sign in, then come back to /admin.')
+      setLoading(false)
+      return
+    }
     const { data, error } = await supabase
       .from('profiles')
       .select('id, display_name, avatar_color, avatar_url, partner_id, last_seen, prayer_morning, prayer_night, notifications_enabled')
       .order('display_name')
 
-    if (error || !data) { setLoading(false); return }
+    if (error) { console.error('Admin fetch error:', error); setLoading(false); return }
+    if (!data || data.length === 0) { console.log('No profiles found'); setLoading(false); return }
 
     // Build pairs (avoid showing same pair twice)
     const seen = new Set()

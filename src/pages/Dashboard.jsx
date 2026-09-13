@@ -29,6 +29,14 @@ export default function Dashboard() {
 
   const [activeTab, setActiveTab] = useState('today')
 
+  // Handle deep link to profile tab (from proposal modal)
+  useEffect(() => {
+    if (window.location.hash === '#profile') {
+      setActiveTab('profile')
+      window.location.hash = ''
+    }
+  }, [])
+
   const getCurrentWeek = () => {
     const anchor = Date.UTC(2026, 8, 1) // Sept 1 2026
     const now = Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
@@ -86,7 +94,7 @@ export default function Dashboard() {
   if (myProgress.loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#f5f4f1' }}>
       <div style={{ width: 60, height: 60, borderRadius: 14, background: '#0d0d0a', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img src="/grace-logo.png" alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+        <img src="/grace-logo.svg" alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
       </div>
       <div style={{ fontSize: '14px', color: '#888' }}>Loading…</div>
     </div>

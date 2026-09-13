@@ -144,8 +144,8 @@ export default function Dashboard() {
         {activeTab === 'today' && weekData && (
           <TodayTab isSat={isSat} isSun={isSun} weekData={weekData} currentWeek={currentWeek} todayReading={todayReading} todayDayIndex={todayDayIndex} myProgress={myProgress} todayKey={todayKey} prayerSlots={prayerSlots} dayComplete={dayComplete} celebrate={celebrate} profile={profile} />
         )}
-        {activeTab === 'week' && weekData && (
-          <WeekTab weekData={weekData} currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} myProgress={myProgress} celebrate={celebrate} activePlan={activePlan} />
+        {activeTab === 'week' && (
+          <WeekTab currentWeek={currentWeek} myProgress={myProgress} celebrate={celebrate} activePlan={activePlan} />
         )}
         {activeTab === 'calendar' && (
           <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} profile={profile} />
@@ -474,7 +474,15 @@ function OfferingCard({ data, todayKey, myProgress, offeringAmount }) {
 }
 
 // ── Week tab ───────────────────────────────────────────────────────────────────
-function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate, activePlan }) {
+function WeekTab({ currentWeek, myProgress, celebrate, activePlan }) {
+  const [viewedWeek, setViewedWeek] = useState(currentWeek)
+
+  // Keep viewedWeek in sync if currentWeek changes
+  useEffect(() => { setViewedWeek(currentWeek) }, [currentWeek])
+
+  const weekData = activePlan[viewedWeek - 1]
+  if (!weekData) return null
+
   const { days, ssLesson, weekNum } = weekData
   const ssData = myProgress.data.ssProgress[`w${weekNum}`] || {}
   const weekReadings = days.map(day => ({
@@ -523,8 +531,8 @@ function WeekTab({ weekData, currentWeek, setCurrentWeek, myProgress, celebrate,
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
           {[
-            ['←', weekNum > 1, () => setCurrentWeek(w => w - 1)],
-            ['→', weekNum < currentWeek, () => setCurrentWeek(w => w + 1)],
+            ['←', weekNum > 1, () => setViewedWeek(w => w - 1)],
+            ['→', weekNum < currentWeek, () => setViewedWeek(w => w + 1)],
           ].map(([lbl, enabled, fn]) => (
             <button key={lbl} disabled={!enabled} onClick={fn} style={{ width: '32px', height: '32px', borderRadius: '9px', border: '0.5px solid #d8d6d2', background: 'none', fontSize: '14px', color: enabled ? '#1a1a12' : '#ccc', cursor: enabled ? 'pointer' : 'not-allowed' }}>{lbl}</button>
           ))}

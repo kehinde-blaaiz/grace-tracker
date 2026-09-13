@@ -39,7 +39,7 @@ export default function LoginPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: '#0d0d0a', marginBottom: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/grace-logo.png" alt="Grow Together" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+            <img src="/grace-logo.svg" alt="Grow Together" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
           </div>
           <div style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a12', marginBottom: '4px' }}>Grow Together</div>
           <div style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>Grow together, one day at a time.</div>

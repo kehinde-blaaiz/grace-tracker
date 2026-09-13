@@ -14,11 +14,17 @@ export default function Dashboard() {
 
   // Dynamic reading plan based on profile settings
   const [activePlan, setActivePlan] = useState(() =>
-    generatePlan(profile?.plan_book || 'Mark', profile?.plan_chapters_per_day || 1, profile?.plan_testament || 'nt')
+    generatePlan(
+      profile?.plan_book || 'Mark',
+      profile?.plan_chapters_per_day || 1,
+      profile?.plan_testament || 'nt',
+      profile?.plan_ot_book || 'Genesis',
+      profile?.plan_nt_book || 'Matthew'
+    )
   )
 
-  const handlePlanChange = (book, chaptersPerDay, testament = 'nt') => {
-    setActivePlan(generatePlan(book, chaptersPerDay, testament))
+  const handlePlanChange = (book, chaptersPerDay, testament = 'nt', otBook = 'Genesis', ntBook = 'Matthew') => {
+    setActivePlan(generatePlan(book, chaptersPerDay, testament, otBook, ntBook))
   }
 
   const [activeTab, setActiveTab] = useState('today')

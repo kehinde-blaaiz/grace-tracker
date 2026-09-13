@@ -16,7 +16,7 @@ export function getPermissionStatus() {
 
 export function sendNotification(title, body) {
   if (Notification.permission !== 'granted') return
-  new Notification(title, { body, icon: '/grace-logo.png' })
+  new Notification(title, { body, icon: '/grace-logo.svg' })
 }
 
 export function scheduleDailyReminders(prayerTimes, userName = 'friend') {
@@ -52,7 +52,7 @@ export function armScheduledNotifications(userName = 'friend') {
     let fireAt = entry.nextFireMs
     while (fireAt <= now) fireAt += 86400000
     setTimeout(() => {
-      sendNotification(`Time to pray, ${userName} 🙏`, `${labels[entry.slot]} — open Grace & Growth to log it.`)
+      sendNotification(`Time to pray, ${userName} 🙏`, `${labels[entry.slot]} — open Grow Together to log it.`)
       const updated = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || '[]')
       const idx = updated.findIndex(e => e.slot === entry.slot)
       if (idx !== -1) { updated[idx].nextFireMs = fireAt + 86400000; localStorage.setItem(SCHEDULE_KEY, JSON.stringify(updated)) }

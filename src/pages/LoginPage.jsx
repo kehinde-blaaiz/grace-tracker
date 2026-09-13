@@ -60,9 +60,9 @@ export default function LoginPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-          {mode === 'signup' && <input type="text" placeholder="Your name (e.g. Kenny)" value={displayName} onChange={e => setDisplayName(e.target.value)} style={inputStyle} />}
-          <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} style={inputStyle} />
+          {mode === 'signup' && <input type="text" placeholder="Your name (e.g. Kenny)" value={displayName} onChange={e => setDisplayName(e.target.value)} autoComplete="off" style={inputStyle} />}
+          <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" style={inputStyle} />
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} autoComplete="current-password" style={inputStyle} />
         </div>
 
         {error && <div style={{ background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', color: '#791F1F', marginBottom: '12px' }}>{error}</div>}

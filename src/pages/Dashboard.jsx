@@ -151,7 +151,7 @@ export default function Dashboard() {
           <CalendarTab myProgress={myProgress} calMonth={calMonth} setCalMonth={setCalMonth} currentWeek={currentWeek} profile={profile} />
         )}
         {activeTab === 'partner' && (
-          <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} showSnack={showSnack} />
+          <PartnerTab partner={partner} partnerProgress={partnerProgress} currentWeek={currentWeek} myProfile={profile} currentUserId={currentUserId} showSnack={showSnack} activePlan={activePlan} />
         )}
         {activeTab === 'profile' && (
           <ProfileTab profile={profile} updateProfile={updateProfile} myProgress={myProgress} signOut={signOut} setShowStreakPopup={setShowStreakPopup} setShowAvatarPicker={setShowAvatarPicker} streakTitle={streakTitle} AvatarDisplay={AvatarDisplay} showSnack={showSnack} setShowSignOutModal={setShowSignOutModal} partner={partner} onPlanChange={handlePlanChange} />
@@ -701,7 +701,7 @@ function CalendarTab({ myProgress, calMonth, setCalMonth, currentWeek, profile }
 }
 
 // ── Partner tab ────────────────────────────────────────────────────────────────
-function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack }) {
+function PartnerTab({ partner, partnerProgress, currentWeek, myProfile, currentUserId, showSnack, activePlan }) {
   // All hooks first — no exceptions
   const [refreshing, setRefreshing] = useState(false)
   const [partnerLastSeen, setPartnerLastSeen] = useState(partner?.last_seen ?? null)

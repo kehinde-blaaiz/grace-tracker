@@ -18,6 +18,14 @@ select:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Login page inputs have white background */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #f5f4f1 inset !important;
+  box-shadow: 0 0 0 1000px #f5f4f1 inset !important;
+}
+
 /* Hide autofill icon on Android */
 input::-webkit-contacts-auto-fill-button,
 input::-webkit-credentials-auto-fill-button {
